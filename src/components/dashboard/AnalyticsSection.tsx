@@ -7,6 +7,7 @@ import {
 import { StatCard } from './StatCard';
 import { TrendingUp, Users, Clock, Heart } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { AnimatedNumber } from '@/components/ui/animated-number';
 
 export function AnalyticsSection() {
   // Group features by category
@@ -173,7 +174,15 @@ export function AnalyticsSection() {
                   categoryColors[category]
                 )} />
               </div>
-              <p className="text-2xl font-bold">{(importance * 100).toFixed(1)}%</p>
+              <p className="text-2xl font-bold">
+                <AnimatedNumber 
+                  value={importance * 100} 
+                  decimals={1} 
+                  suffix="%" 
+                  delay={800 + index * 100}
+                  duration={1500}
+                />
+              </p>
               <p className="text-xs text-muted-foreground mt-1">{category}</p>
             </div>
           ))}
@@ -234,15 +243,23 @@ export function AnalyticsSection() {
         >
           <div className="space-y-6">
             {[
-              { label: 'High Performers', value: '31%', color: 'text-success' },
-              { label: 'Medium Performers', value: '47%', color: 'text-warning' },
-              { label: 'Low Performers', value: '22%', color: 'text-destructive' },
-              { label: 'Avg Satisfaction', value: '3.85', color: 'text-primary' },
-              { label: 'Training Completion', value: '78%', color: 'text-accent' },
+              { label: 'High Performers', value: 31, suffix: '%', color: 'text-success' },
+              { label: 'Medium Performers', value: 47, suffix: '%', color: 'text-warning' },
+              { label: 'Low Performers', value: 22, suffix: '%', color: 'text-destructive' },
+              { label: 'Avg Satisfaction', value: 3.85, decimals: 2, suffix: '', color: 'text-primary' },
+              { label: 'Training Completion', value: 78, suffix: '%', color: 'text-accent' },
             ].map((stat, index) => (
               <div key={stat.label} className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">{stat.label}</span>
-                <span className={cn("font-mono font-bold text-lg", stat.color)}>{stat.value}</span>
+                <span className={cn("font-mono font-bold text-lg", stat.color)}>
+                  <AnimatedNumber 
+                    value={stat.value} 
+                    decimals={stat.decimals || 0}
+                    suffix={stat.suffix}
+                    delay={1000 + index * 150}
+                    duration={1800}
+                  />
+                </span>
               </div>
             ))}
           </div>

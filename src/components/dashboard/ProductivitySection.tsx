@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { TrendingUp, Clock, Target, Activity, Users, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { departmentStats, employees, performanceTrends } from '@/data/mockData';
+import { AnimatedNumber } from '@/components/ui/animated-number';
 
 // Extended productivity data
 const weeklyProductivity = [
@@ -347,21 +348,26 @@ export function ProductivitySection() {
             value: '10AM - 11AM',
             description: 'Highest productivity window',
             color: 'text-success',
-            bgColor: 'bg-success/10'
+            bgColor: 'bg-success/10',
+            isText: true
           },
           {
             title: 'Top Team',
             value: 'HR',
             description: 'Highest avg performance (84.5)',
             color: 'text-primary',
-            bgColor: 'bg-primary/10'
+            bgColor: 'bg-primary/10',
+            isText: true
           },
           {
             title: 'Growth Rate',
-            value: '+12.0%',
+            numValue: 12.0,
+            prefix: '+',
+            suffix: '%',
             description: 'YoY productivity improvement',
             color: 'text-accent',
-            bgColor: 'bg-accent/10'
+            bgColor: 'bg-accent/10',
+            isText: false
           }
         ].map((insight, index) => (
           <div 
@@ -370,7 +376,18 @@ export function ProductivitySection() {
             style={{ animationDelay: `${900 + index * 100}ms` }}
           >
             <p className="text-sm text-muted-foreground mb-1">{insight.title}</p>
-            <p className={cn("text-2xl font-bold mb-1", insight.color)}>{insight.value}</p>
+            <p className={cn("text-2xl font-bold mb-1", insight.color)}>
+              {insight.isText ? insight.value : (
+                <AnimatedNumber 
+                  value={insight.numValue!} 
+                  decimals={1}
+                  prefix={insight.prefix}
+                  suffix={insight.suffix}
+                  delay={1000 + index * 150}
+                  duration={1800}
+                />
+              )}
+            </p>
             <p className="text-xs text-muted-foreground">{insight.description}</p>
           </div>
         ))}

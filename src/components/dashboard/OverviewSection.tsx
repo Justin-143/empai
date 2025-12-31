@@ -6,6 +6,7 @@ import {
   BarChart, Bar, PieChart, Pie, Cell, Legend
 } from 'recharts';
 import { performanceTrends, departmentStats, performanceDistribution } from '@/data/mockData';
+import { AnimatedNumber } from '@/components/ui/animated-number';
 
 const COLORS = ['hsl(187, 85%, 53%)', 'hsl(260, 65%, 60%)', 'hsl(142, 76%, 45%)', 'hsl(38, 92%, 50%)', 'hsl(0, 72%, 51%)'];
 
@@ -170,7 +171,15 @@ export function OverviewSection() {
               <div key={item.name} className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">{item.name}</span>
-                  <span className="font-mono font-medium">{item.value}%</span>
+                  <span className="font-mono font-medium">
+                    <AnimatedNumber 
+                      value={item.value} 
+                      decimals={1}
+                      suffix="%"
+                      delay={800 + index * 100}
+                      duration={1500}
+                    />
+                  </span>
                 </div>
                 <div className="h-2 bg-secondary rounded-full overflow-hidden">
                   <div 

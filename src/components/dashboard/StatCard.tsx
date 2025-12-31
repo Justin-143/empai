@@ -1,5 +1,6 @@
 import { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useCountUp } from '@/hooks/useCountUp';
 
 interface StatCardProps {
   title: string;
@@ -30,7 +31,39 @@ const iconStyles = {
   warning: 'bg-warning/20 text-warning',
 };
 
+// Parse value to extract number and suffix
+function parseValue(value: string | number): { numericValue: number; prefix: string; suffix: string; decimals: number } {
+  if (typeof value === 'number') {
+    return { numericValue: value, prefix: '', suffix: '', decimals: Number.isInteger(value) ? 0 : 2 };
+  }
+  
+  const match = value.match(/^([^\d]*)([\d.]+)(.*)$/);
+  if (match) {
+    const numericValue = parseFloat(match[2]);
+    const decimals = match[2].includes('.') ? match[2].split('.')[1].length : 0;
+    return {
+      prefix: match[1],
+      numericValue,
+      suffix: match[3],
+      decimals,
+    };
+  }
+  
+  return { numericValue: 0, prefix: '', suffix: value, decimals: 0 };
+}
+
 export function StatCard({ title, value, subtitle, icon: Icon, trend, variant = 'default', delay = 0 }: StatCardProps) {
+  const { numericValue, prefix, suffix, decimals } = parseValue(value);
+  
+  const { formattedValue } = useCountUp({
+    end: numericValue,
+    duration: 2000,
+    decimals,
+    prefix,
+    suffix,
+    delay: delay + 200, // Start after card animation
+  });
+
   return (
     <div 
       className="stat-card animate-slide-up group"
@@ -64,7 +97,7 @@ export function StatCard({ title, value, subtitle, icon: Icon, trend, variant = 
         
         <div className="space-y-1">
           <p className="text-sm text-muted-foreground font-medium">{title}</p>
-          <p className="text-3xl font-bold tracking-tight">{value}</p>
+          <p className="text-3xl font-bold tracking-tight font-mono">{formattedValue}</p>
           {subtitle && (
             <p className="text-xs text-muted-foreground">{subtitle}</p>
           )}
