@@ -7,16 +7,20 @@ import { ModelsSection } from './ModelsSection';
 import { RegressionSection } from './RegressionSection';
 import { DepartmentsSection } from './DepartmentsSection';
 import { EmployeesSection } from './EmployeesSection';
+import { WhatIfSection } from './WhatIfSection';
+import { ProductivitySection } from './ProductivitySection';
 import { cn } from '@/lib/utils';
 
 const sectionTitles: Record<string, { title: string; subtitle: string }> = {
   overview: { title: 'Dashboard Overview', subtitle: 'Employee performance insights at a glance' },
   prediction: { title: 'Performance Prediction', subtitle: 'ML-powered employee performance forecasting' },
   analytics: { title: 'Productivity Analytics', subtitle: 'Deep dive into performance drivers' },
-  models: { title: 'ML Models', subtitle: 'Compare model performance metrics' },
+  models: { title: 'ML Models', subtitle: 'Compare model performance and run predictions' },
   regression: { title: 'Regression Analysis', subtitle: 'Actual vs predicted performance analysis' },
   departments: { title: 'Department Analytics', subtitle: 'Performance breakdown by department' },
   employees: { title: 'Employee Directory', subtitle: 'View and manage employee data' },
+  whatif: { title: 'What-If Scenarios', subtitle: 'Simulate changes and predict performance impact' },
+  productivity: { title: 'Productivity Trends', subtitle: 'Team performance and productivity over time' },
 };
 
 export function Dashboard() {
@@ -39,6 +43,10 @@ export function Dashboard() {
         return <DepartmentsSection />;
       case 'employees':
         return <EmployeesSection />;
+      case 'whatif':
+        return <WhatIfSection />;
+      case 'productivity':
+        return <ProductivitySection />;
       default:
         return <OverviewSection />;
     }

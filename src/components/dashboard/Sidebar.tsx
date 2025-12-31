@@ -10,7 +10,9 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
-  Sparkles
+  Sparkles,
+  FlaskConical,
+  Activity
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -23,6 +25,8 @@ interface NavItem {
 const navItems: NavItem[] = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
   { id: 'prediction', label: 'Prediction', icon: Sparkles },
+  { id: 'whatif', label: 'What-If Analysis', icon: FlaskConical },
+  { id: 'productivity', label: 'Productivity', icon: Activity },
   { id: 'analytics', label: 'Analytics', icon: TrendingUp },
   { id: 'models', label: 'ML Models', icon: Brain },
   { id: 'regression', label: 'Regression', icon: LineChart },
