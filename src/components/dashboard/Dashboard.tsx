@@ -11,12 +11,13 @@ import { WhatIfSection } from './WhatIfSection';
 import { ProductivitySection } from './ProductivitySection';
 import { SettingsPanel } from './SettingsPanel';
 import { DatasetUpload } from './DatasetUpload';
-import { Upload, Menu, X } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 const sectionTitles: Record<string, { title: string; subtitle: string }> = {
   overview: { title: 'Dashboard Overview', subtitle: 'Employee performance insights at a glance' },
+  upload: { title: 'Dataset Upload', subtitle: 'Upload and preprocess your employee data' },
   prediction: { title: 'Performance Prediction', subtitle: 'ML-powered employee performance forecasting' },
   analytics: { title: 'Productivity Analytics', subtitle: 'Deep dive into performance drivers' },
   models: { title: 'ML Models', subtitle: 'Compare model performance and run predictions' },
@@ -30,7 +31,6 @@ const sectionTitles: Record<string, { title: string; subtitle: string }> = {
 export function Dashboard() {
   const [activeSection, setActiveSection] = useState('overview');
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [uploadOpen, setUploadOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const currentSection = sectionTitles[activeSection];
 
@@ -43,6 +43,8 @@ export function Dashboard() {
     switch (activeSection) {
       case 'overview':
         return <OverviewSection />;
+      case 'upload':
+        return <DatasetUpload />;
       case 'prediction':
         return <PredictionSection />;
       case 'analytics':
@@ -104,14 +106,6 @@ export function Dashboard() {
                 <h1 className="text-xl sm:text-2xl font-bold">{currentSection.title}</h1>
                 <p className="text-sm sm:text-base text-muted-foreground mt-1">{currentSection.subtitle}</p>
               </div>
-              <Button 
-                onClick={() => setUploadOpen(true)}
-                className="flex items-center gap-2 self-start sm:self-auto"
-              >
-                <Upload className="w-4 h-4" />
-                <span className="hidden sm:inline">Upload Dataset</span>
-                <span className="sm:hidden">Upload</span>
-              </Button>
             </div>
           </div>
         </header>
@@ -124,9 +118,6 @@ export function Dashboard() {
 
       {/* Settings Panel */}
       <SettingsPanel isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
-
-      {/* Dataset Upload Modal */}
-      <DatasetUpload isOpen={uploadOpen} onClose={() => setUploadOpen(false)} />
     </div>
   );
 }
