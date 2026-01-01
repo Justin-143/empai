@@ -12,9 +12,11 @@ import {
   ChevronRight,
   Sparkles,
   FlaskConical,
-  Activity
+  Activity,
+  Home
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
 
 interface NavItem {
   id: string;
@@ -37,15 +39,21 @@ const navItems: NavItem[] = [
 interface SidebarProps {
   activeSection: string;
   onSectionChange: (section: string) => void;
+  onSettingsClick: () => void;
+  mobileOpen?: boolean;
+  onMobileClose?: () => void;
 }
 
-export function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
+export function Sidebar({ activeSection, onSectionChange, onSettingsClick, mobileOpen }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
+  const navigate = useNavigate();
 
   return (
     <aside 
       className={cn(
         "fixed left-0 top-0 h-screen bg-sidebar border-r border-sidebar-border z-50 transition-all duration-300",
+        "transform lg:transform-none",
+        mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
         collapsed ? "w-16" : "w-64"
       )}
     >
@@ -63,14 +71,26 @@ export function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
           variant="ghost"
           size="icon"
           onClick={() => setCollapsed(!collapsed)}
-          className="ml-auto hover:bg-sidebar-accent"
+          className="ml-auto hover:bg-sidebar-accent hidden lg:flex"
         >
           {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
         </Button>
       </div>
 
       {/* Navigation */}
-      <nav className="p-3 space-y-1">
+      <nav className="p-3 space-y-1 overflow-y-auto max-h-[calc(100vh-160px)]">
+        {/* Home Button */}
+        <button
+          onClick={() => navigate('/')}
+          className={cn(
+            "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group",
+            "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground mb-2"
+          )}
+        >
+          <Home className="w-5 h-5 transition-transform duration-200 group-hover:scale-110" />
+          {!collapsed && <span className="font-medium text-sm">Home</span>}
+        </button>
+
         {navItems.map((item, index) => {
           const Icon = item.icon;
           const isActive = activeSection === item.id;
@@ -89,14 +109,14 @@ export function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
               style={{ animationDelay: `${index * 50}ms` }}
             >
               <Icon className={cn(
-                "w-5 h-5 transition-transform duration-200 group-hover:scale-110",
+                "w-5 h-5 transition-transform duration-200 group-hover:scale-110 flex-shrink-0",
                 isActive && "text-primary"
               )} />
               {!collapsed && (
-                <span className="font-medium text-sm">{item.label}</span>
+                <span className="font-medium text-sm truncate">{item.label}</span>
               )}
               {isActive && !collapsed && (
-                <div className="ml-auto w-1.5 h-1.5 rounded-full bg-primary animate-pulse-glow" />
+                <div className="ml-auto w-1.5 h-1.5 rounded-full bg-primary animate-pulse-glow flex-shrink-0" />
               )}
             </button>
           );
@@ -106,6 +126,7 @@ export function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
       {/* Settings at bottom */}
       <div className="absolute bottom-4 left-0 right-0 px-3">
         <button
+          onClick={onSettingsClick}
           className={cn(
             "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200",
             "text-sidebar-foreground/50 hover:bg-sidebar-accent hover:text-sidebar-foreground"

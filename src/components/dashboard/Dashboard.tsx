@@ -9,6 +9,10 @@ import { DepartmentsSection } from './DepartmentsSection';
 import { EmployeesSection } from './EmployeesSection';
 import { WhatIfSection } from './WhatIfSection';
 import { ProductivitySection } from './ProductivitySection';
+import { SettingsPanel } from './SettingsPanel';
+import { DatasetUpload } from './DatasetUpload';
+import { Upload, Menu, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 const sectionTitles: Record<string, { title: string; subtitle: string }> = {
@@ -25,7 +29,15 @@ const sectionTitles: Record<string, { title: string; subtitle: string }> = {
 
 export function Dashboard() {
   const [activeSection, setActiveSection] = useState('overview');
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const currentSection = sectionTitles[activeSection];
+
+  const handleSectionChange = (section: string) => {
+    setActiveSection(section);
+    setMobileMenuOpen(false);
+  };
 
   const renderSection = () => {
     switch (activeSection) {
@@ -54,22 +66,67 @@ export function Dashboard() {
 
   return (
     <div className="min-h-screen flex w-full">
-      <Sidebar activeSection={activeSection} onSectionChange={setActiveSection} />
+      {/* Mobile Menu Button */}
+      <Button
+        variant="ghost"
+        size="icon"
+        className="fixed top-4 left-4 z-50 lg:hidden"
+        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+      >
+        {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+      </Button>
+
+      {/* Mobile Overlay */}
+      {mobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40 lg:hidden"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
+
+      <Sidebar 
+        activeSection={activeSection} 
+        onSectionChange={handleSectionChange}
+        onSettingsClick={() => setSettingsOpen(true)}
+        mobileOpen={mobileMenuOpen}
+        onMobileClose={() => setMobileMenuOpen(false)}
+      />
       
-      <main className="flex-1 ml-64 transition-all duration-300">
+      <main className={cn(
+        "flex-1 transition-all duration-300",
+        "ml-0 lg:ml-64"
+      )}>
         {/* Header */}
-        <header className="sticky top-0 z-40 backdrop-blur-xl bg-background/80 border-b border-border">
-          <div className="px-8 py-6">
-            <h1 className="text-2xl font-bold">{currentSection.title}</h1>
-            <p className="text-muted-foreground mt-1">{currentSection.subtitle}</p>
+        <header className="sticky top-0 z-30 backdrop-blur-xl bg-background/80 border-b border-border">
+          <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 ml-10 lg:ml-0">
+              <div>
+                <h1 className="text-xl sm:text-2xl font-bold">{currentSection.title}</h1>
+                <p className="text-sm sm:text-base text-muted-foreground mt-1">{currentSection.subtitle}</p>
+              </div>
+              <Button 
+                onClick={() => setUploadOpen(true)}
+                className="flex items-center gap-2 self-start sm:self-auto"
+              >
+                <Upload className="w-4 h-4" />
+                <span className="hidden sm:inline">Upload Dataset</span>
+                <span className="sm:hidden">Upload</span>
+              </Button>
+            </div>
           </div>
         </header>
 
         {/* Content */}
-        <div className="p-8">
+        <div className="p-4 sm:p-6 lg:p-8">
           {renderSection()}
         </div>
       </main>
+
+      {/* Settings Panel */}
+      <SettingsPanel isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
+
+      {/* Dataset Upload Modal */}
+      <DatasetUpload isOpen={uploadOpen} onClose={() => setUploadOpen(false)} />
     </div>
   );
 }
