@@ -13,7 +13,8 @@ import {
   Sparkles,
   FlaskConical,
   Activity,
-  Home
+  Home,
+  Upload
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -26,6 +27,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+  { id: 'upload', label: 'Dataset Upload', icon: Upload },
   { id: 'prediction', label: 'Prediction', icon: Sparkles },
   { id: 'whatif', label: 'What-If Analysis', icon: FlaskConical },
   { id: 'productivity', label: 'Productivity', icon: Activity },
