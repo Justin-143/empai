@@ -4,10 +4,12 @@ import { Button } from '@/components/ui/button';
 import { ChartCard } from './ChartCard';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { apiService, PredictResponse } from '@/services/api';
 import { useToast } from '@/hooks/use-toast';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface PredictionResult {
   score: number;
@@ -23,13 +25,24 @@ interface PredictionResult {
 }
 
 export function PredictionSection() {
-  const [satisfaction, setSatisfaction] = useState([3.5]);
-  const [trainingHours, setTrainingHours] = useState([35]);
-  const [yearsAtCompany, setYearsAtCompany] = useState([3]);
-  const [workHours, setWorkHours] = useState([42]);
-  const [overtime, setOvertime] = useState([8]);
-  const [sickDays, setSickDays] = useState([4]);
+  // All dataset features
+  const [age, setAge] = useState(30);
+  const [gender, setGender] = useState('Male');
   const [department, setDepartment] = useState('Engineering');
+  const [educationLevel, setEducationLevel] = useState("Bachelor's");
+  const [yearsAtCompany, setYearsAtCompany] = useState([5]);
+  const [monthlySalary, setMonthlySalary] = useState(5000);
+  const [workHoursPerWeek, setWorkHoursPerWeek] = useState([40]);
+  const [projectsHandled, setProjectsHandled] = useState([5]);
+  const [overtimeHours, setOvertimeHours] = useState([5]);
+  const [sickDays, setSickDays] = useState([3]);
+  const [remoteWorkFrequency, setRemoteWorkFrequency] = useState('Hybrid');
+  const [teamSize, setTeamSize] = useState([8]);
+  const [trainingHours, setTrainingHours] = useState([20]);
+  const [promotions, setPromotions] = useState([1]);
+  const [satisfactionScore, setSatisfactionScore] = useState([3.5]);
+  const [jobTitle, setJobTitle] = useState('Software Engineer');
+  
   const [prediction, setPrediction] = useState<PredictionResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -41,13 +54,22 @@ export function PredictionSection() {
     
     try {
       const response: PredictResponse = await apiService.predict({
-        satisfaction: satisfaction[0],
-        training_hours: trainingHours[0],
-        years_at_company: yearsAtCompany[0],
-        work_hours: workHours[0],
-        overtime: overtime[0],
-        sick_days: sickDays[0],
-        department: department,
+        Age: age,
+        Gender: gender,
+        Department: department,
+        Education_Level: educationLevel,
+        Years_At_Company: yearsAtCompany[0],
+        Monthly_Salary: monthlySalary,
+        Work_Hours_Per_Week: workHoursPerWeek[0],
+        Projects_Handled: projectsHandled[0],
+        Overtime_Hours: overtimeHours[0],
+        Sick_Days: sickDays[0],
+        Remote_Work_Frequency: remoteWorkFrequency,
+        Team_Size: teamSize[0],
+        Training_Hours: trainingHours[0],
+        Promotions: promotions[0],
+        Employee_Satisfaction_Score: satisfactionScore[0],
+        Job_Title: jobTitle,
       });
 
       setPrediction({
@@ -84,135 +106,275 @@ export function PredictionSection() {
         subtitle="Enter employee metrics to predict performance"
         delay={0}
       >
-        <div className="space-y-6">
-          {/* Satisfaction Score */}
-          <div className="space-y-3">
-            <div className="flex justify-between">
-              <Label>Satisfaction Score</Label>
-              <span className="text-sm font-mono text-primary">{satisfaction[0].toFixed(1)}</span>
+        <ScrollArea className="h-[600px] pr-4">
+          <div className="space-y-5">
+            {/* Row 1: Age, Gender */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Age</Label>
+                <Input
+                  type="number"
+                  value={age}
+                  onChange={(e) => setAge(Math.max(18, Math.min(65, parseInt(e.target.value) || 18)))}
+                  min={18}
+                  max={65}
+                  className="font-mono"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Gender</Label>
+                <Select value={gender} onValueChange={setGender}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Male">Male</SelectItem>
+                    <SelectItem value="Female">Female</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            <Slider
-              value={satisfaction}
-              onValueChange={setSatisfaction}
-              min={1}
-              max={5}
-              step={0.1}
-              className="cursor-pointer"
-            />
-          </div>
 
-          {/* Training Hours */}
-          <div className="space-y-3">
-            <div className="flex justify-between">
-              <Label>Training Hours (Annual)</Label>
-              <span className="text-sm font-mono text-primary">{trainingHours[0]}h</span>
+            {/* Row 2: Department, Education Level */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Department</Label>
+                <Select value={department} onValueChange={setDepartment}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Engineering">Engineering</SelectItem>
+                    <SelectItem value="Sales">Sales</SelectItem>
+                    <SelectItem value="HR">HR</SelectItem>
+                    <SelectItem value="Marketing">Marketing</SelectItem>
+                    <SelectItem value="Finance">Finance</SelectItem>
+                    <SelectItem value="Operations">Operations</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Education Level</Label>
+                <Select value={educationLevel} onValueChange={setEducationLevel}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="High School">High School</SelectItem>
+                    <SelectItem value="Associate's">Associate's</SelectItem>
+                    <SelectItem value="Bachelor's">Bachelor's</SelectItem>
+                    <SelectItem value="Master's">Master's</SelectItem>
+                    <SelectItem value="PhD">PhD</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            <Slider
-              value={trainingHours}
-              onValueChange={setTrainingHours}
-              min={0}
-              max={100}
-              step={1}
-            />
-          </div>
 
-          {/* Years at Company */}
-          <div className="space-y-3">
-            <div className="flex justify-between">
-              <Label>Years at Company</Label>
-              <span className="text-sm font-mono text-primary">{yearsAtCompany[0]}</span>
+            {/* Row 3: Job Title, Monthly Salary */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Job Title</Label>
+                <Select value={jobTitle} onValueChange={setJobTitle}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Software Engineer">Software Engineer</SelectItem>
+                    <SelectItem value="Data Analyst">Data Analyst</SelectItem>
+                    <SelectItem value="Manager">Manager</SelectItem>
+                    <SelectItem value="Sales Rep">Sales Rep</SelectItem>
+                    <SelectItem value="HR Specialist">HR Specialist</SelectItem>
+                    <SelectItem value="Designer">Designer</SelectItem>
+                    <SelectItem value="Accountant">Accountant</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Monthly Salary ($)</Label>
+                <Input
+                  type="number"
+                  value={monthlySalary}
+                  onChange={(e) => setMonthlySalary(Math.max(1000, Math.min(50000, parseInt(e.target.value) || 1000)))}
+                  min={1000}
+                  max={50000}
+                  className="font-mono"
+                />
+              </div>
             </div>
-            <Slider
-              value={yearsAtCompany}
-              onValueChange={setYearsAtCompany}
-              min={0}
-              max={20}
-              step={1}
-            />
-          </div>
 
-          {/* Work Hours */}
-          <div className="space-y-3">
-            <div className="flex justify-between">
-              <Label>Work Hours/Week</Label>
-              <span className="text-sm font-mono text-primary">{workHours[0]}h</span>
+            {/* Row 4: Remote Work, Team Size */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Remote Work Frequency</Label>
+                <Select value={remoteWorkFrequency} onValueChange={setRemoteWorkFrequency}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Never">Never (On-site)</SelectItem>
+                    <SelectItem value="Rarely">Rarely</SelectItem>
+                    <SelectItem value="Hybrid">Hybrid</SelectItem>
+                    <SelectItem value="Mostly">Mostly Remote</SelectItem>
+                    <SelectItem value="Always">Fully Remote</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <Label>Team Size</Label>
+                  <span className="text-sm font-mono text-primary">{teamSize[0]}</span>
+                </div>
+                <Slider
+                  value={teamSize}
+                  onValueChange={setTeamSize}
+                  min={1}
+                  max={50}
+                  step={1}
+                />
+              </div>
             </div>
-            <Slider
-              value={workHours}
-              onValueChange={setWorkHours}
-              min={20}
-              max={60}
-              step={1}
-            />
-          </div>
 
-          {/* Overtime */}
-          <div className="space-y-3">
-            <div className="flex justify-between">
-              <Label>Overtime Hours/Week</Label>
-              <span className="text-sm font-mono text-primary">{overtime[0]}h</span>
+            {/* Years at Company */}
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <Label>Years at Company</Label>
+                <span className="text-sm font-mono text-primary">{yearsAtCompany[0]}</span>
+              </div>
+              <Slider
+                value={yearsAtCompany}
+                onValueChange={setYearsAtCompany}
+                min={0}
+                max={30}
+                step={1}
+              />
             </div>
-            <Slider
-              value={overtime}
-              onValueChange={setOvertime}
-              min={0}
-              max={30}
-              step={1}
-            />
-          </div>
 
-          {/* Sick Days */}
-          <div className="space-y-3">
-            <div className="flex justify-between">
-              <Label>Sick Days (Annual)</Label>
-              <span className="text-sm font-mono text-primary">{sickDays[0]}</span>
+            {/* Work Hours Per Week */}
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <Label>Work Hours/Week</Label>
+                <span className="text-sm font-mono text-primary">{workHoursPerWeek[0]}h</span>
+              </div>
+              <Slider
+                value={workHoursPerWeek}
+                onValueChange={setWorkHoursPerWeek}
+                min={20}
+                max={60}
+                step={1}
+              />
             </div>
-            <Slider
-              value={sickDays}
-              onValueChange={setSickDays}
-              min={0}
-              max={20}
-              step={1}
-            />
-          </div>
 
-          {/* Department */}
-          <div className="space-y-3">
-            <Label>Department</Label>
-            <Select value={department} onValueChange={setDepartment}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Engineering">Engineering</SelectItem>
-                <SelectItem value="Sales">Sales</SelectItem>
-                <SelectItem value="HR">HR</SelectItem>
-                <SelectItem value="Marketing">Marketing</SelectItem>
-                <SelectItem value="Finance">Finance</SelectItem>
-                <SelectItem value="Operations">Operations</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+            {/* Projects Handled */}
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <Label>Projects Handled</Label>
+                <span className="text-sm font-mono text-primary">{projectsHandled[0]}</span>
+              </div>
+              <Slider
+                value={projectsHandled}
+                onValueChange={setProjectsHandled}
+                min={0}
+                max={20}
+                step={1}
+              />
+            </div>
 
-          <Button 
-            onClick={handlePredict} 
-            className="w-full"
-            variant="glow"
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <span className="flex items-center gap-2">
-                <span className="animate-spin">⟳</span>
-                Predicting...
-              </span>
-            ) : (
-              <span className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4" />
-                Predict Performance
-              </span>
-            )}
-          </Button>
-        </div>
+            {/* Overtime Hours */}
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <Label>Overtime Hours/Week</Label>
+                <span className="text-sm font-mono text-primary">{overtimeHours[0]}h</span>
+              </div>
+              <Slider
+                value={overtimeHours}
+                onValueChange={setOvertimeHours}
+                min={0}
+                max={30}
+                step={1}
+              />
+            </div>
+
+            {/* Sick Days */}
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <Label>Sick Days (Annual)</Label>
+                <span className="text-sm font-mono text-primary">{sickDays[0]}</span>
+              </div>
+              <Slider
+                value={sickDays}
+                onValueChange={setSickDays}
+                min={0}
+                max={30}
+                step={1}
+              />
+            </div>
+
+            {/* Training Hours */}
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <Label>Training Hours (Annual)</Label>
+                <span className="text-sm font-mono text-primary">{trainingHours[0]}h</span>
+              </div>
+              <Slider
+                value={trainingHours}
+                onValueChange={setTrainingHours}
+                min={0}
+                max={100}
+                step={1}
+              />
+            </div>
+
+            {/* Promotions */}
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <Label>Promotions</Label>
+                <span className="text-sm font-mono text-primary">{promotions[0]}</span>
+              </div>
+              <Slider
+                value={promotions}
+                onValueChange={setPromotions}
+                min={0}
+                max={5}
+                step={1}
+              />
+            </div>
+
+            {/* Employee Satisfaction Score */}
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <Label>Satisfaction Score</Label>
+                <span className="text-sm font-mono text-primary">{satisfactionScore[0].toFixed(1)}</span>
+              </div>
+              <Slider
+                value={satisfactionScore}
+                onValueChange={setSatisfactionScore}
+                min={1}
+                max={5}
+                step={0.1}
+              />
+            </div>
+
+            <Button 
+              onClick={handlePredict} 
+              className="w-full"
+              variant="glow"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <span className="flex items-center gap-2">
+                  <span className="animate-spin">⟳</span>
+                  Predicting...
+                </span>
+              ) : (
+                <span className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4" />
+                  Predict Performance
+                </span>
+              )}
+            </Button>
+          </div>
+        </ScrollArea>
       </ChartCard>
 
       {/* Prediction Results */}

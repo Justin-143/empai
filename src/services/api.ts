@@ -2,13 +2,22 @@
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://palaced-sharonda-thirtypenny.ngrok-free.dev';
 
 export interface PredictRequest {
-  satisfaction: number;
-  training_hours: number;
-  years_at_company: number;
-  work_hours: number;
-  overtime: number;
-  sick_days: number;
-  department: string;
+  Age: number;
+  Gender: string;
+  Department: string;
+  Education_Level: string;
+  Years_At_Company: number;
+  Monthly_Salary: number;
+  Work_Hours_Per_Week: number;
+  Projects_Handled: number;
+  Overtime_Hours: number;
+  Sick_Days: number;
+  Remote_Work_Frequency: string;
+  Team_Size: number;
+  Training_Hours: number;
+  Promotions: number;
+  Employee_Satisfaction_Score: number;
+  Job_Title: string;
 }
 
 export interface PredictResponse {
