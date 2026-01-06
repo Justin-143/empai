@@ -1,16 +1,24 @@
 import { useState } from 'react';
-import { Sparkles, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Sparkles, AlertCircle, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ChartCard } from './ChartCard';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
+import { apiService, PredictResponse } from '@/services/api';
+import { useToast } from '@/hooks/use-toast';
 
 interface PredictionResult {
   score: number;
   category: 'Low' | 'Medium' | 'High';
   confidence: number;
+  probabilities: {
+    low: number;
+    medium: number;
+    high: number;
+  };
+  riskLevel: 'Low' | 'Medium' | 'High';
   recommendations: string[];
 }
 
@@ -24,37 +32,48 @@ export function PredictionSection() {
   const [department, setDepartment] = useState('Engineering');
   const [prediction, setPrediction] = useState<PredictionResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
 
-  const handlePredict = () => {
+  const handlePredict = async () => {
     setIsLoading(true);
+    setError(null);
     
-    // Simulated ML prediction (in production, this would call an API)
-    setTimeout(() => {
-      const baseScore = 
-        satisfaction[0] * 12 +
-        trainingHours[0] * 0.5 +
-        yearsAtCompany[0] * 2 -
-        overtime[0] * 0.8 -
-        sickDays[0] * 1.5 +
-        (department === 'HR' ? 5 : department === 'Sales' ? 3 : 0);
-      
-      const score = Math.min(100, Math.max(0, baseScore + 20));
-      const category: 'Low' | 'Medium' | 'High' = score < 60 ? 'Low' : score < 80 ? 'Medium' : 'High';
-      
-      const recommendations: string[] = [];
-      if (satisfaction[0] < 3.5) recommendations.push('Improve employee engagement initiatives');
-      if (trainingHours[0] < 30) recommendations.push('Increase training opportunities');
-      if (overtime[0] > 10) recommendations.push('Review workload distribution');
-      if (sickDays[0] > 6) recommendations.push('Implement wellness programs');
-      
-      setPrediction({
-        score: Math.round(score),
-        category,
-        confidence: 85 + Math.random() * 10,
-        recommendations: recommendations.length > 0 ? recommendations : ['Employee is performing optimally']
+    try {
+      const response: PredictResponse = await apiService.predict({
+        satisfaction: satisfaction[0],
+        training_hours: trainingHours[0],
+        years_at_company: yearsAtCompany[0],
+        work_hours: workHours[0],
+        overtime: overtime[0],
+        sick_days: sickDays[0],
+        department: department,
       });
+
+      setPrediction({
+        score: Math.round(response.performance_score),
+        category: response.risk_level,
+        confidence: response.confidence,
+        probabilities: response.probabilities,
+        riskLevel: response.risk_level,
+        recommendations: response.recommendations,
+      });
+
+      toast({
+        title: "Prediction Complete",
+        description: `Performance score: ${Math.round(response.performance_score)}`,
+      });
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to get prediction';
+      setError(errorMessage);
+      toast({
+        variant: "destructive",
+        title: "Prediction Failed",
+        description: errorMessage,
+      });
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   return (
@@ -199,33 +218,49 @@ export function PredictionSection() {
       {/* Prediction Results */}
       <ChartCard 
         title="Prediction Results" 
-        subtitle="XGBoost model output"
+        subtitle="ML model output"
         delay={100}
       >
-        {prediction ? (
+        {error && !prediction ? (
+          <div className="flex flex-col items-center justify-center h-[400px] text-center">
+            <div className="w-20 h-20 rounded-full bg-destructive/10 flex items-center justify-center mb-4">
+              <AlertTriangle className="w-10 h-10 text-destructive" />
+            </div>
+            <p className="text-destructive font-medium mb-2">Connection Error</p>
+            <p className="text-muted-foreground text-sm max-w-xs">{error}</p>
+          </div>
+        ) : prediction ? (
           <div className="space-y-6 animate-fade-in">
             {/* Score Display */}
-            <div className="text-center py-8">
+            <div className="text-center py-6">
               <div className="relative inline-flex">
                 <div className={cn(
-                  "w-40 h-40 rounded-full flex items-center justify-center",
+                  "w-32 h-32 sm:w-40 sm:h-40 rounded-full flex items-center justify-center",
                   "bg-gradient-to-br",
                   prediction.category === 'High' ? "from-success/20 to-success/5 glow-primary" :
                   prediction.category === 'Medium' ? "from-warning/20 to-warning/5" :
                   "from-destructive/20 to-destructive/5"
                 )}>
                   <div className="text-center">
-                    <p className="text-5xl font-bold">{prediction.score}</p>
-                    <p className="text-sm text-muted-foreground">Performance Score</p>
+                    <p className="text-4xl sm:text-5xl font-bold">{prediction.score}</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground">Performance Score</p>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Category Badge */}
-            <div className="flex justify-center">
+            {/* Risk Level Badge */}
+            <div className="flex justify-center gap-3 flex-wrap">
               <div className={cn(
-                "px-6 py-2 rounded-full font-medium text-lg",
+                "px-4 py-1.5 rounded-full font-medium text-sm",
+                prediction.riskLevel === 'High' ? "bg-destructive/20 text-destructive" :
+                prediction.riskLevel === 'Medium' ? "bg-warning/20 text-warning" :
+                "bg-success/20 text-success"
+              )}>
+                Risk: {prediction.riskLevel}
+              </div>
+              <div className={cn(
+                "px-4 py-1.5 rounded-full font-medium text-sm",
                 prediction.category === 'High' ? "bg-success/20 text-success" :
                 prediction.category === 'Medium' ? "bg-warning/20 text-warning" :
                 "bg-destructive/20 text-destructive"
@@ -234,12 +269,22 @@ export function PredictionSection() {
               </div>
             </div>
 
-            {/* Confidence */}
-            <div className="text-center">
-              <p className="text-sm text-muted-foreground">Model Confidence</p>
-              <p className="text-2xl font-mono font-semibold text-primary">
-                {prediction.confidence.toFixed(1)}%
-              </p>
+            {/* Confidence & Probabilities */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="text-center p-3 rounded-lg bg-secondary/30">
+                <p className="text-xs text-muted-foreground">Confidence</p>
+                <p className="text-xl font-mono font-semibold text-primary">
+                  {prediction.confidence.toFixed(1)}%
+                </p>
+              </div>
+              <div className="text-center p-3 rounded-lg bg-secondary/30">
+                <p className="text-xs text-muted-foreground">Probabilities</p>
+                <div className="flex justify-center gap-2 text-xs mt-1">
+                  <span className="text-destructive">L:{(prediction.probabilities.low * 100).toFixed(0)}%</span>
+                  <span className="text-warning">M:{(prediction.probabilities.medium * 100).toFixed(0)}%</span>
+                  <span className="text-success">H:{(prediction.probabilities.high * 100).toFixed(0)}%</span>
+                </div>
+              </div>
             </div>
 
             {/* Recommendations */}
