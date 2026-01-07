@@ -43,6 +43,54 @@ export interface FeatureImportance {
   importance: number;
 }
 
+export interface DatasetAnalysisResponse {
+  summary: {
+    total_employees: number;
+    avg_performance: number;
+    avg_satisfaction: number;
+    departments: string[];
+    risk_distribution: {
+      low: number;
+      medium: number;
+      high: number;
+    };
+  };
+  department_stats: Array<{
+    department: string;
+    count: number;
+    avg_performance: number;
+    avg_satisfaction: number;
+    avg_salary: number;
+  }>;
+  performance_distribution: Array<{
+    range: string;
+    count: number;
+  }>;
+  feature_correlations: Array<{
+    feature: string;
+    correlation: number;
+  }>;
+  predictions: Array<{
+    employee_id: number;
+    predicted_performance: number;
+    risk_level: string;
+    confidence: number;
+  }>;
+  trends: {
+    monthly_performance: Array<{ month: string; performance: number }>;
+    department_comparison: Array<{ department: string; performance: number }>;
+  };
+}
+
+export interface DatasetUploadResponse {
+  success: boolean;
+  message: string;
+  rows: number;
+  columns: number;
+  preview: Record<string, any>[];
+  analysis: DatasetAnalysisResponse;
+}
+
 class ApiService {
   private baseUrl: string;
 
@@ -86,6 +134,34 @@ class ApiService {
   async getFeatureImportance(): Promise<FeatureImportance[]> {
     return this.request<FeatureImportance[]>('/api/feature-importance', {
       method: 'GET',
+    });
+  }
+
+  async uploadDataset(file: File): Promise<DatasetUploadResponse> {
+    const url = `${this.baseUrl}/api/upload-dataset`;
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'ngrok-skip-browser-warning': 'true',
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`API Error (${response.status}): ${errorText || response.statusText}`);
+    }
+
+    return response.json();
+  }
+
+  async analyzeDataset(data: Record<string, any>[]): Promise<DatasetAnalysisResponse> {
+    return this.request<DatasetAnalysisResponse>('/api/analyze-dataset', {
+      method: 'POST',
+      body: JSON.stringify({ data }),
     });
   }
 }

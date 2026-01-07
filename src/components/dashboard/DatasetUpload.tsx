@@ -1,32 +1,21 @@
 import { useState, useRef } from 'react';
-import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, Loader2, Download, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, Loader2, Download, ChevronLeft, ChevronRight, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { apiService } from '@/services/api';
+import { useDataset } from '@/contexts/DatasetContext';
 
 interface UploadedFile {
   name: string;
   size: number;
-  status: 'uploading' | 'processing' | 'complete' | 'error';
+  status: 'uploading' | 'processing' | 'analyzing' | 'complete' | 'error';
   progress: number;
   rows?: number;
   columns?: number;
+  errorMessage?: string;
 }
-
-// Extended mock preview data for pagination demo
-const mockPreviewData = [
-  { id: 1, employee_id: 'EMP001', name: 'John Smith', department: 'Engineering', performance: 85, satisfaction: 4.2, training_hours: 45 },
-  { id: 2, employee_id: 'EMP002', name: 'Sarah Johnson', department: 'Sales', performance: 72, satisfaction: 3.8, training_hours: 32 },
-  { id: 3, employee_id: 'EMP003', name: 'Michael Brown', department: 'HR', performance: 91, satisfaction: 4.5, training_hours: 28 },
-  { id: 4, employee_id: 'EMP004', name: 'Emily Davis', department: 'Marketing', performance: 78, satisfaction: 3.9, training_hours: 55 },
-  { id: 5, employee_id: 'EMP005', name: 'David Wilson', department: 'Finance', performance: 88, satisfaction: 4.1, training_hours: 40 },
-  { id: 6, employee_id: 'EMP006', name: 'Lisa Anderson', department: 'Engineering', performance: 92, satisfaction: 4.7, training_hours: 52 },
-  { id: 7, employee_id: 'EMP007', name: 'James Taylor', department: 'Sales', performance: 65, satisfaction: 3.2, training_hours: 25 },
-  { id: 8, employee_id: 'EMP008', name: 'Jennifer Martinez', department: 'HR', performance: 79, satisfaction: 4.0, training_hours: 38 },
-  { id: 9, employee_id: 'EMP009', name: 'Robert Garcia', department: 'Marketing', performance: 83, satisfaction: 3.6, training_hours: 42 },
-  { id: 10, employee_id: 'EMP010', name: 'Amanda White', department: 'Finance', performance: 95, satisfaction: 4.8, training_hours: 60 },
-];
 
 const ITEMS_PER_PAGE = 5;
 
@@ -34,11 +23,13 @@ export function DatasetUpload() {
   const [isDragging, setIsDragging] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<UploadedFile | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [previewData, setPreviewData] = useState<Record<string, any>[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const { setAnalysis, setDatasetName, setIsAnalyzing } = useDataset();
 
-  const totalPages = Math.ceil(mockPreviewData.length / ITEMS_PER_PAGE);
-  const paginatedData = mockPreviewData.slice(
+  const totalPages = Math.ceil(previewData.length / ITEMS_PER_PAGE);
+  const paginatedData = previewData.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
@@ -49,39 +40,129 @@ export function DatasetUpload() {
     return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
   };
 
-  const simulateUpload = (file: File) => {
-    const uploadFile: UploadedFile = {
+  const parseCSV = (text: string): Record<string, any>[] => {
+    const lines = text.trim().split('\n');
+    if (lines.length < 2) return [];
+    
+    const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+    const data: Record<string, any>[] = [];
+    
+    for (let i = 1; i < lines.length; i++) {
+      const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
+      if (values.length === headers.length) {
+        const row: Record<string, any> = {};
+        headers.forEach((header, idx) => {
+          const value = values[idx];
+          const numValue = parseFloat(value);
+          row[header] = isNaN(numValue) ? value : numValue;
+        });
+        data.push(row);
+      }
+    }
+    return data;
+  };
+
+  const parseJSON = (text: string): Record<string, any>[] => {
+    try {
+      const parsed = JSON.parse(text);
+      return Array.isArray(parsed) ? parsed : [parsed];
+    } catch {
+      return [];
+    }
+  };
+
+  const processFile = async (file: File) => {
+    setUploadedFile({
       name: file.name,
       size: file.size,
       status: 'uploading',
       progress: 0,
-    };
-    setUploadedFile(uploadFile);
+    });
     setCurrentPage(1);
+    setPreviewData([]);
 
-    const uploadInterval = setInterval(() => {
-      setUploadedFile(prev => {
-        if (!prev) return null;
-        const newProgress = Math.min(prev.progress + 15, 100);
-        if (newProgress === 100) {
-          clearInterval(uploadInterval);
-          setTimeout(() => {
-            setUploadedFile(p => p ? { ...p, status: 'processing' } : null);
-            setTimeout(() => {
-              const completeFile: UploadedFile = {
-                ...uploadFile,
-                status: 'complete',
-                progress: 100,
-                rows: Math.floor(Math.random() * 5000) + 500,
-                columns: Math.floor(Math.random() * 20) + 5,
-              };
-              setUploadedFile(completeFile);
-            }, 1500);
-          }, 500);
-        }
-        return { ...prev, progress: newProgress };
-      });
+    // Simulate upload progress
+    let progress = 0;
+    const progressInterval = setInterval(() => {
+      progress += 20;
+      if (progress <= 100) {
+        setUploadedFile(prev => prev ? { ...prev, progress } : null);
+      }
+      if (progress >= 100) {
+        clearInterval(progressInterval);
+      }
     }, 200);
+
+    try {
+      // Read file content
+      const text = await file.text();
+      let data: Record<string, any>[] = [];
+
+      if (file.name.endsWith('.csv')) {
+        data = parseCSV(text);
+      } else if (file.name.endsWith('.json')) {
+        data = parseJSON(text);
+      }
+
+      if (data.length === 0) {
+        throw new Error('Could not parse file or file is empty');
+      }
+
+      clearInterval(progressInterval);
+      setUploadedFile(prev => prev ? { 
+        ...prev, 
+        status: 'processing', 
+        progress: 100,
+        rows: data.length,
+        columns: Object.keys(data[0]).length
+      } : null);
+
+      setPreviewData(data);
+      setDatasetName(file.name);
+
+      // Analyze dataset via API
+      setUploadedFile(prev => prev ? { ...prev, status: 'analyzing' } : null);
+      setIsAnalyzing(true);
+
+      try {
+        const analysisResult = await apiService.analyzeDataset(data);
+        setAnalysis(analysisResult);
+        
+        setUploadedFile(prev => prev ? { ...prev, status: 'complete' } : null);
+        
+        toast({
+          title: "Dataset Analyzed Successfully",
+          description: `Analyzed ${data.length} employees across ${analysisResult.summary.departments.length} departments`,
+        });
+      } catch (apiError) {
+        console.error('API analysis failed:', apiError);
+        // Still mark as complete but without API analysis
+        setUploadedFile(prev => prev ? { ...prev, status: 'complete' } : null);
+        
+        toast({
+          title: "File Uploaded",
+          description: "Dataset loaded. API analysis unavailable - using local preview only.",
+          variant: "default",
+        });
+      }
+    } catch (error) {
+      clearInterval(progressInterval);
+      console.error('File processing error:', error);
+      setUploadedFile(prev => prev ? { 
+        ...prev, 
+        status: 'error', 
+        progress: 0,
+        errorMessage: error instanceof Error ? error.message : 'Failed to process file'
+      } : null);
+      
+      toast({
+        title: "Upload Failed",
+        description: error instanceof Error ? error.message : 'Failed to process file',
+        variant: "destructive",
+      });
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   const handleDrop = (e: React.DragEvent) => {
@@ -90,28 +171,39 @@ export function DatasetUpload() {
     
     const file = e.dataTransfer.files[0];
     if (file && (file.name.endsWith('.csv') || file.name.endsWith('.xlsx') || file.name.endsWith('.json'))) {
-      simulateUpload(file);
+      processFile(file);
+    } else {
+      toast({
+        title: "Invalid File Type",
+        description: "Please upload a CSV, XLSX, or JSON file",
+        variant: "destructive",
+      });
     }
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      simulateUpload(file);
+      processFile(file);
     }
   };
 
   const resetUpload = () => {
     setUploadedFile(null);
     setCurrentPage(1);
+    setPreviewData([]);
+    setAnalysis(null);
+    setDatasetName(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
   };
 
   const exportToCSV = () => {
-    const headers = Object.keys(mockPreviewData[0]).join(',');
-    const rows = mockPreviewData.map(row => Object.values(row).join(','));
+    if (previewData.length === 0) return;
+    
+    const headers = Object.keys(previewData[0]).join(',');
+    const rows = previewData.map(row => Object.values(row).join(','));
     const csvContent = [headers, ...rows].join('\n');
     
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -131,7 +223,9 @@ export function DatasetUpload() {
   };
 
   const exportToJSON = () => {
-    const jsonContent = JSON.stringify(mockPreviewData, null, 2);
+    if (previewData.length === 0) return;
+    
+    const jsonContent = JSON.stringify(previewData, null, 2);
     
     const blob = new Blob([jsonContent], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -149,8 +243,21 @@ export function DatasetUpload() {
     });
   };
 
+  const getStatusMessage = () => {
+    switch (uploadedFile?.status) {
+      case 'uploading':
+        return 'Uploading...';
+      case 'processing':
+        return 'Processing data...';
+      case 'analyzing':
+        return 'Analyzing dataset with ML backend...';
+      default:
+        return '';
+    }
+  };
+
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-6">
       {/* Upload Area */}
       <div className="bg-card border border-border rounded-xl p-6">
         {!uploadedFile ? (
@@ -185,6 +292,10 @@ export function DatasetUpload() {
             <p className="text-sm text-muted-foreground">
               Supports CSV, XLSX, and JSON files up to 50MB
             </p>
+            <div className="mt-4 flex items-center justify-center gap-2 text-sm text-muted-foreground">
+              <BarChart3 className="w-4 h-4" />
+              <span>Dataset will be analyzed by ML backend</span>
+            </div>
           </div>
         ) : (
           <div className="space-y-4">
@@ -206,16 +317,23 @@ export function DatasetUpload() {
             </div>
 
             {/* Progress */}
-            {(uploadedFile.status === 'uploading' || uploadedFile.status === 'processing') && (
+            {(uploadedFile.status === 'uploading' || uploadedFile.status === 'processing' || uploadedFile.status === 'analyzing') && (
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
                   <span className="flex items-center gap-2">
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    {uploadedFile.status === 'uploading' ? 'Uploading...' : 'Processing data...'}
+                    {getStatusMessage()}
                   </span>
-                  <span>{uploadedFile.progress}%</span>
+                  {uploadedFile.status === 'uploading' && <span>{uploadedFile.progress}%</span>}
                 </div>
-                <Progress value={uploadedFile.progress} className="h-2" />
+                <Progress value={uploadedFile.status === 'uploading' ? uploadedFile.progress : 100} className="h-2" />
+              </div>
+            )}
+
+            {/* Error Message */}
+            {uploadedFile.status === 'error' && (
+              <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive">
+                <p className="text-sm">{uploadedFile.errorMessage || 'An error occurred'}</p>
               </div>
             )}
 
@@ -237,13 +355,13 @@ export function DatasetUpload() {
       </div>
 
       {/* Data Preview Table */}
-      {uploadedFile?.status === 'complete' && (
+      {uploadedFile?.status === 'complete' && previewData.length > 0 && (
         <div className="bg-card border border-border rounded-xl p-4 sm:p-6 space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <h3 className="font-semibold text-lg">Data Preview</h3>
               <span className="text-sm text-muted-foreground">
-                Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1}-{Math.min(currentPage * ITEMS_PER_PAGE, mockPreviewData.length)} of {mockPreviewData.length} rows
+                Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1}-{Math.min(currentPage * ITEMS_PER_PAGE, previewData.length)} of {previewData.length} rows
               </span>
             </div>
             <div className="flex gap-2">
@@ -262,7 +380,7 @@ export function DatasetUpload() {
               <table className="min-w-full divide-y divide-border">
                 <thead>
                   <tr className="bg-muted/30">
-                    {Object.keys(mockPreviewData[0]).map((key) => (
+                    {Object.keys(previewData[0]).map((key) => (
                       <th 
                         key={key} 
                         className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap"
@@ -280,7 +398,7 @@ export function DatasetUpload() {
                           key={cellIdx} 
                           className="px-3 py-3 text-sm whitespace-nowrap"
                         >
-                          {value}
+                          {String(value)}
                         </td>
                       ))}
                     </tr>
@@ -291,61 +409,52 @@ export function DatasetUpload() {
           </div>
           
           {/* Pagination */}
-          <div className="flex items-center justify-between pt-2">
-            <p className="text-sm text-muted-foreground">
-              Page {currentPage} of {totalPages}
-            </p>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-              >
-                <ChevronRight className="w-4 h-4" />
-              </Button>
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between pt-2">
+              <p className="text-sm text-muted-foreground">
+                Page {currentPage} of {totalPages}
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       )}
 
-      {/* Preprocessing Options */}
+      {/* Analysis Info */}
       {uploadedFile?.status === 'complete' && (
         <div className="bg-card border border-border rounded-xl p-4 sm:p-6 space-y-4">
-          <h3 className="font-semibold text-lg">Preprocessing Options</h3>
-          <div className="grid gap-2">
-            <label className="flex items-center gap-3 p-3 rounded-lg bg-muted/20 hover:bg-muted/30 cursor-pointer transition-colors">
-              <input type="checkbox" defaultChecked className="rounded border-border w-4 h-4" />
-              <span className="text-sm sm:text-base">Remove duplicates</span>
-            </label>
-            <label className="flex items-center gap-3 p-3 rounded-lg bg-muted/20 hover:bg-muted/30 cursor-pointer transition-colors">
-              <input type="checkbox" defaultChecked className="rounded border-border w-4 h-4" />
-              <span className="text-sm sm:text-base">Handle missing values (mean imputation)</span>
-            </label>
-            <label className="flex items-center gap-3 p-3 rounded-lg bg-muted/20 hover:bg-muted/30 cursor-pointer transition-colors">
-              <input type="checkbox" className="rounded border-border w-4 h-4" />
-              <span className="text-sm sm:text-base">Normalize numeric features</span>
-            </label>
-            <label className="flex items-center gap-3 p-3 rounded-lg bg-muted/20 hover:bg-muted/30 cursor-pointer transition-colors">
-              <input type="checkbox" className="rounded border-border w-4 h-4" />
-              <span className="text-sm sm:text-base">Encode categorical variables</span>
-            </label>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <BarChart3 className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-lg">Dataset Analysis Complete</h3>
+              <p className="text-sm text-muted-foreground">
+                Navigate to Overview or other sections to view insights from your data
+              </p>
+            </div>
           </div>
           
           <div className="flex flex-col sm:flex-row gap-3 pt-4">
             <Button variant="outline" onClick={resetUpload} className="flex-1">
               Upload Another
-            </Button>
-            <Button className="flex-1">
-              Start Preprocessing
             </Button>
           </div>
         </div>
