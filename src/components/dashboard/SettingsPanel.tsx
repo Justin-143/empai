@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { X, Bell, Moon, Sun, Globe, Shield, Database, Palette, Monitor, Smartphone, Tablet } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { X, Bell, Moon, Sun, Globe, Shield, Database, Palette, Monitor, Smartphone, Tablet, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -7,29 +7,118 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Slider } from '@/components/ui/slider';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 interface SettingsPanelProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
+const defaultSettings = {
+  notifications: true,
+  emailAlerts: true,
+  darkMode: true,
+  autoRefresh: true,
+  refreshInterval: 30,
+  language: 'en',
+  dataRetention: '90',
+  predictionThreshold: 0.75,
+  showConfidenceScores: true,
+  enableWhatIf: true,
+  compactView: false,
+};
+
 export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
-  const [settings, setSettings] = useState({
-    notifications: true,
-    emailAlerts: true,
-    darkMode: true,
-    autoRefresh: true,
-    refreshInterval: 30,
-    language: 'en',
-    dataRetention: '90',
-    predictionThreshold: 0.75,
-    showConfidenceScores: true,
-    enableWhatIf: true,
-    compactView: false,
+  const { toast } = useToast();
+  const [settings, setSettings] = useState(() => {
+    const saved = localStorage.getItem('dashboard-settings');
+    if (saved) {
+      try {
+        return { ...defaultSettings, ...JSON.parse(saved) };
+      } catch {
+        return defaultSettings;
+      }
+    }
+    return defaultSettings;
   });
+
+  // Apply dark mode on mount and when it changes
+  useEffect(() => {
+    if (settings.darkMode) {
+      document.documentElement.classList.add('dark');
+      document.documentElement.style.setProperty('--background', '222 47% 6%');
+      document.documentElement.style.setProperty('--foreground', '210 40% 98%');
+      document.documentElement.style.setProperty('--card', '222 47% 8%');
+      document.documentElement.style.setProperty('--card-foreground', '210 40% 98%');
+      document.documentElement.style.setProperty('--popover', '222 47% 8%');
+      document.documentElement.style.setProperty('--popover-foreground', '210 40% 98%');
+      document.documentElement.style.setProperty('--secondary', '222 47% 12%');
+      document.documentElement.style.setProperty('--secondary-foreground', '210 40% 98%');
+      document.documentElement.style.setProperty('--muted', '222 47% 14%');
+      document.documentElement.style.setProperty('--muted-foreground', '215 20% 55%');
+      document.documentElement.style.setProperty('--border', '222 47% 16%');
+      document.documentElement.style.setProperty('--input', '222 47% 16%');
+      document.documentElement.style.setProperty('--sidebar-background', '222 47% 5%');
+      document.documentElement.style.setProperty('--sidebar-accent', '222 47% 10%');
+      document.documentElement.style.setProperty('--sidebar-border', '222 47% 12%');
+    } else {
+      document.documentElement.classList.remove('dark');
+      document.documentElement.style.setProperty('--background', '0 0% 100%');
+      document.documentElement.style.setProperty('--foreground', '222 47% 11%');
+      document.documentElement.style.setProperty('--card', '0 0% 98%');
+      document.documentElement.style.setProperty('--card-foreground', '222 47% 11%');
+      document.documentElement.style.setProperty('--popover', '0 0% 100%');
+      document.documentElement.style.setProperty('--popover-foreground', '222 47% 11%');
+      document.documentElement.style.setProperty('--secondary', '220 14% 96%');
+      document.documentElement.style.setProperty('--secondary-foreground', '222 47% 11%');
+      document.documentElement.style.setProperty('--muted', '220 14% 96%');
+      document.documentElement.style.setProperty('--muted-foreground', '220 9% 46%');
+      document.documentElement.style.setProperty('--border', '220 13% 91%');
+      document.documentElement.style.setProperty('--input', '220 13% 91%');
+      document.documentElement.style.setProperty('--sidebar-background', '0 0% 98%');
+      document.documentElement.style.setProperty('--sidebar-accent', '220 14% 96%');
+      document.documentElement.style.setProperty('--sidebar-border', '220 13% 91%');
+    }
+  }, [settings.darkMode]);
+
+  // Save settings to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('dashboard-settings', JSON.stringify(settings));
+  }, [settings]);
 
   const updateSetting = <K extends keyof typeof settings>(key: K, value: typeof settings[K]) => {
     setSettings(prev => ({ ...prev, [key]: value }));
+    const keyStr = String(key);
+    const formattedKey = keyStr.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+    toast({
+      title: "Setting Updated",
+      description: `${formattedKey} has been updated.`,
+      duration: 2000,
+    });
+  };
+
+  const handleChangePassword = () => {
+    toast({
+      title: "Change Password",
+      description: "Password change functionality requires authentication backend.",
+    });
+  };
+
+  const handleTwoFactor = () => {
+    toast({
+      title: "Two-Factor Authentication",
+      description: "2FA setup requires authentication backend.",
+    });
+  };
+
+  const handleClearData = () => {
+    localStorage.removeItem('dashboard-settings');
+    setSettings(defaultSettings);
+    toast({
+      title: "Data Cleared",
+      description: "All settings have been reset to defaults.",
+      variant: "destructive",
+    });
   };
 
   if (!isOpen) return null;
@@ -142,7 +231,7 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
                   </div>
                   <Slider
                     value={[settings.refreshInterval]}
-                    onValueChange={([v]) => updateSetting('refreshInterval', v)}
+                    onValueChange={([v]) => setSettings(prev => ({ ...prev, refreshInterval: v }))}
                     min={10}
                     max={120}
                     step={10}
@@ -177,7 +266,7 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
                 </div>
                 <Slider
                   value={[settings.predictionThreshold * 100]}
-                  onValueChange={([v]) => updateSetting('predictionThreshold', v / 100)}
+                  onValueChange={([v]) => setSettings(prev => ({ ...prev, predictionThreshold: v / 100 }))}
                   min={50}
                   max={95}
                   step={5}
@@ -244,13 +333,17 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
               Security
             </h3>
             <div className="space-y-3">
-              <Button variant="outline" className="w-full justify-start text-sm">
+              <Button variant="outline" className="w-full justify-start text-sm" onClick={handleChangePassword}>
                 Change Password
               </Button>
-              <Button variant="outline" className="w-full justify-start text-sm">
+              <Button variant="outline" className="w-full justify-start text-sm" onClick={handleTwoFactor}>
                 Two-Factor Authentication
               </Button>
-              <Button variant="outline" className="w-full justify-start text-sm text-destructive hover:text-destructive">
+              <Button 
+                variant="outline" 
+                className="w-full justify-start text-sm text-destructive hover:text-destructive"
+                onClick={handleClearData}
+              >
                 Clear All Data
               </Button>
             </div>
@@ -276,6 +369,12 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
               </div>
             </div>
           </section>
+
+          {/* Save indicator */}
+          <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground pt-4">
+            <Check className="w-4 h-4 text-success" />
+            <span>Settings are saved automatically</span>
+          </div>
         </div>
       </div>
     </>
