@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Sparkles, AlertCircle, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Sparkles, AlertCircle, CheckCircle2, AlertTriangle, Loader2, Wifi, WifiOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ChartCard } from './ChartCard';
 import { Label } from '@/components/ui/label';
@@ -46,7 +46,21 @@ export function PredictionSection() {
   const [prediction, setPrediction] = useState<PredictionResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [apiStatus, setApiStatus] = useState<'checking' | 'online' | 'offline'>('checking');
   const { toast } = useToast();
+
+  // Health check on mount
+  useEffect(() => {
+    const checkHealth = async () => {
+      try {
+        await apiService.healthCheck();
+        setApiStatus('online');
+      } catch {
+        setApiStatus('offline');
+      }
+    };
+    checkHealth();
+  }, []);
 
   const handlePredict = async () => {
     setIsLoading(true);
@@ -355,15 +369,32 @@ export function PredictionSection() {
               />
             </div>
 
+            {/* API Status Indicator */}
+            <div className={cn(
+              "flex items-center gap-2 px-3 py-2 rounded-lg text-sm",
+              apiStatus === 'online' ? "bg-success/10 text-success" :
+              apiStatus === 'offline' ? "bg-destructive/10 text-destructive" :
+              "bg-muted/50 text-muted-foreground"
+            )}>
+              {apiStatus === 'checking' && <Loader2 className="w-4 h-4 animate-spin" />}
+              {apiStatus === 'online' && <Wifi className="w-4 h-4" />}
+              {apiStatus === 'offline' && <WifiOff className="w-4 h-4" />}
+              <span>
+                {apiStatus === 'checking' ? 'Checking API...' :
+                 apiStatus === 'online' ? 'ML Backend Online' :
+                 'ML Backend Offline'}
+              </span>
+            </div>
+
             <Button 
               onClick={handlePredict} 
               className="w-full"
               variant="glow"
-              disabled={isLoading}
+              disabled={isLoading || apiStatus === 'offline'}
             >
               {isLoading ? (
                 <span className="flex items-center gap-2">
-                  <span className="animate-spin">⟳</span>
+                  <Loader2 className="w-4 h-4 animate-spin" />
                   Predicting...
                 </span>
               ) : (
