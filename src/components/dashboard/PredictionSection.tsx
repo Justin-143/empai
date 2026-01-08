@@ -7,7 +7,7 @@ import { Slider } from '@/components/ui/slider';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import { apiService, PredictResponse } from '@/services/api';
+import { predictPerformance, healthCheck } from '@/services/api';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
@@ -53,7 +53,7 @@ export function PredictionSection() {
   useEffect(() => {
     const checkHealth = async () => {
       try {
-        await apiService.healthCheck();
+        await healthCheck();
         setApiStatus('online');
       } catch {
         setApiStatus('offline');
@@ -67,7 +67,7 @@ export function PredictionSection() {
     setError(null);
     
     try {
-      const response: PredictResponse = await apiService.predict({
+      const response = await predictPerformance({
         Age: age,
         Gender: gender,
         Department: department,

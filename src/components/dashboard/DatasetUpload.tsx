@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { apiService } from '@/services/api';
+// Dataset analysis is handled locally - no API import needed
 import { useDataset } from '@/contexts/DatasetContext';
 
 interface UploadedFile {
@@ -125,14 +125,13 @@ export function DatasetUpload() {
       setIsAnalyzing(true);
 
       try {
-        const analysisResult = await apiService.analyzeDataset(data);
-        setAnalysis(analysisResult);
-        
+        // Local analysis since backend doesn't have this endpoint
+        const departments = [...new Set(data.map((d: any) => d.Department).filter(Boolean))];
         setUploadedFile(prev => prev ? { ...prev, status: 'complete' } : null);
         
         toast({
-          title: "Dataset Analyzed Successfully",
-          description: `Analyzed ${data.length} employees across ${analysisResult.summary.departments.length} departments`,
+          title: "Dataset Loaded Successfully",
+          description: `Loaded ${data.length} employees across ${departments.length} departments`,
         });
       } catch (apiError) {
         console.error('API analysis failed:', apiError);
