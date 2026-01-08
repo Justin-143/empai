@@ -31,9 +31,6 @@ export async function healthCheck() {
   const res = await fetch(`${API_BASE}/api/health`, {
     headers: { "ngrok-skip-browser-warning": "true" }
   });
-  if (!res.ok) {
-    const errorText = await res.text();
-    throw new Error(errorText || res.statusText);
-  }
-  return await res.json();
+  const data = await res.json();
+  return { online: data.status === "healthy" };
 }
