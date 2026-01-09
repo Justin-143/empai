@@ -88,6 +88,12 @@ export function PredictionSection() {
 
       const response = await predictPerformance(payload);
 
+      if (!response || response.success === false) {
+        setError('Prediction unavailable. Please fill all fields correctly.');
+        setPrediction(null);
+        return;
+      }
+
       setPrediction({
         score: Math.round(response.performance_score ?? 0),
         category: response.risk_level ?? 'Medium',
@@ -103,7 +109,7 @@ export function PredictionSection() {
 
       toast({
         title: "Prediction Complete",
-        description: `Performance score: ${Math.round(response.performance_score)}`,
+        description: `Performance score: ${Math.round(response.performance_score ?? 0)}`,
       });
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to get prediction';
@@ -473,7 +479,7 @@ export function PredictionSection() {
               <div className="text-center p-3 rounded-lg bg-secondary/30">
                 <p className="text-xs text-muted-foreground">Confidence</p>
                 <p className="text-xl font-mono font-semibold text-primary">
-                  {(prediction.confidence ?? 0).toFixed(1)}%
+                  {Number(prediction.confidence || 0).toFixed(2)}%
                 </p>
               </div>
               <div className="text-center p-3 rounded-lg bg-secondary/30">
