@@ -67,24 +67,26 @@ export function PredictionSection() {
     setError(null);
     
     try {
-      const response = await predictPerformance({
-        Age: age,
-        Gender: gender,
-        Department: department,
-        Education_Level: educationLevel,
-        Years_At_Company: yearsAtCompany[0],
-        Monthly_Salary: monthlySalary,
-        Work_Hours_Per_Week: workHoursPerWeek[0],
-        Projects_Handled: projectsHandled[0],
-        Overtime_Hours: overtimeHours[0],
-        Sick_Days: sickDays[0],
-        Remote_Work_Frequency: remoteWorkFrequency,
-        Team_Size: teamSize[0],
-        Training_Hours: trainingHours[0],
-        Promotions: promotions[0],
-        Employee_Satisfaction_Score: satisfactionScore[0],
-        Job_Title: jobTitle,
-      });
+      const payload = {
+        age: 30,
+        gender: "Male",
+        department: "IT",
+        education: "Bachelor",
+        yearsAtCompany: 4,
+        salary: 6000,
+        teamSize: 8,
+        remote: 50,
+        jobTitle: "Developer",
+        workHours: workHoursPerWeek[0],
+        projects: projectsHandled[0],
+        overtime: overtimeHours[0],
+        sickDays: sickDays[0],
+        training: trainingHours[0],
+        promotions: promotions[0],
+        satisfaction: satisfactionScore[0]
+      };
+
+      const response = await predictPerformance(payload);
 
       setPrediction({
         score: Math.round(response.performance_score ?? 0),
