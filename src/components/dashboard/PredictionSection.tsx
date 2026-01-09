@@ -87,12 +87,16 @@ export function PredictionSection() {
       });
 
       setPrediction({
-        score: Math.round(response.performance_score),
-        category: response.risk_level,
-        confidence: response.confidence,
-        probabilities: response.probabilities,
-        riskLevel: response.risk_level,
-        recommendations: response.recommendations,
+        score: Math.round(response.performance_score ?? 0),
+        category: response.risk_level ?? 'Medium',
+        confidence: response.confidence ?? 0,
+        probabilities: {
+          low: response.probabilities?.low ?? 0,
+          medium: response.probabilities?.medium ?? 0,
+          high: response.probabilities?.high ?? 0,
+        },
+        riskLevel: response.risk_level ?? 'Medium',
+        recommendations: response.recommendations ?? [],
       });
 
       toast({
@@ -467,15 +471,15 @@ export function PredictionSection() {
               <div className="text-center p-3 rounded-lg bg-secondary/30">
                 <p className="text-xs text-muted-foreground">Confidence</p>
                 <p className="text-xl font-mono font-semibold text-primary">
-                  {prediction.confidence.toFixed(1)}%
+                  {(prediction.confidence ?? 0).toFixed(1)}%
                 </p>
               </div>
               <div className="text-center p-3 rounded-lg bg-secondary/30">
                 <p className="text-xs text-muted-foreground">Probabilities</p>
                 <div className="flex justify-center gap-2 text-xs mt-1">
-                  <span className="text-destructive">L:{(prediction.probabilities.low * 100).toFixed(0)}%</span>
-                  <span className="text-warning">M:{(prediction.probabilities.medium * 100).toFixed(0)}%</span>
-                  <span className="text-success">H:{(prediction.probabilities.high * 100).toFixed(0)}%</span>
+                  <span className="text-destructive">L:{((prediction.probabilities?.low ?? 0) * 100).toFixed(0)}%</span>
+                  <span className="text-warning">M:{((prediction.probabilities?.medium ?? 0) * 100).toFixed(0)}%</span>
+                  <span className="text-success">H:{((prediction.probabilities?.high ?? 0) * 100).toFixed(0)}%</span>
                 </div>
               </div>
             </div>
