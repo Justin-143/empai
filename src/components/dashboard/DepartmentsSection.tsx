@@ -1,11 +1,12 @@
 import { ChartCard } from './ChartCard';
-import { departmentStats } from '@/data/mockData';
+import { departmentStats as mockDeptStats } from '@/data/mockData';
 import { 
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend,
   RadialBarChart, RadialBar
 } from 'recharts';
 import { cn } from '@/lib/utils';
 import { Users, TrendingUp, Clock, Star } from 'lucide-react';
+import { useDataset } from '@/contexts/DatasetContext';
 
 const COLORS = [
   'hsl(187, 85%, 53%)', 
@@ -17,6 +18,11 @@ const COLORS = [
 ];
 
 export function DepartmentsSection() {
+  const { departmentStats: uploadedDeptStats, hasUploadedData } = useDataset();
+  
+  // Use uploaded data if available, otherwise use mock data
+  const departmentStats = hasUploadedData ? uploadedDeptStats : mockDeptStats;
+
   const pieData = departmentStats.map(d => ({
     name: d.department,
     value: d.employeeCount
@@ -25,7 +31,7 @@ export function DepartmentsSection() {
   const radialData = departmentStats.map((d, i) => ({
     name: d.department,
     performance: d.avgPerformance,
-    fill: COLORS[i]
+    fill: COLORS[i % COLORS.length]
   }));
 
   return (
@@ -54,10 +60,13 @@ export function DepartmentsSection() {
               </Pie>
               <Tooltip 
                 contentStyle={{ 
-                  backgroundColor: 'hsl(222, 47%, 8%)', 
-                  border: '1px solid hsl(222, 47%, 16%)',
-                  borderRadius: '8px'
+                  backgroundColor: 'hsl(var(--card))', 
+                  border: '1px solid hsl(var(--border))',
+                  borderRadius: '8px',
+                  color: 'hsl(var(--foreground))'
                 }}
+                labelStyle={{ color: 'hsl(var(--foreground))' }}
+                itemStyle={{ color: 'hsl(var(--foreground))' }}
               />
               <Legend />
             </PieChart>
@@ -92,10 +101,13 @@ export function DepartmentsSection() {
               />
               <Tooltip 
                 contentStyle={{ 
-                  backgroundColor: 'hsl(222, 47%, 8%)', 
-                  border: '1px solid hsl(222, 47%, 16%)',
-                  borderRadius: '8px'
+                  backgroundColor: 'hsl(var(--card))', 
+                  border: '1px solid hsl(var(--border))',
+                  borderRadius: '8px',
+                  color: 'hsl(var(--foreground))'
                 }}
+                labelStyle={{ color: 'hsl(var(--foreground))' }}
+                itemStyle={{ color: 'hsl(var(--foreground))' }}
                 formatter={(value: number) => [`${value.toFixed(1)}%`, 'Performance']}
               />
             </RadialBarChart>

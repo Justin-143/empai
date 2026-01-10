@@ -5,7 +5,12 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   BarChart, Bar, PieChart, Pie, Cell, Legend
 } from 'recharts';
-import { performanceTrends, departmentStats, performanceDistribution } from '@/data/mockData';
+import { 
+  performanceTrends as mockTrends, 
+  departmentStats as mockDeptStats, 
+  performanceDistribution as mockPerfDist,
+  featureImportance as mockFeatureImportance 
+} from '@/data/mockData';
 import { AnimatedNumber } from '@/components/ui/animated-number';
 import { useDataset } from '@/contexts/DatasetContext';
 import { Button } from '@/components/ui/button';
@@ -13,61 +18,98 @@ import { Button } from '@/components/ui/button';
 const COLORS = ['hsl(187, 85%, 53%)', 'hsl(260, 65%, 60%)', 'hsl(142, 76%, 45%)', 'hsl(38, 92%, 50%)', 'hsl(0, 72%, 51%)'];
 
 export function OverviewSection() {
-  const { analysis, datasetName, isAnalyzing } = useDataset();
+  const { 
+    analysis, 
+    datasetName, 
+    isAnalyzing, 
+    hasUploadedData,
+    employees,
+    departmentStats: uploadedDeptStats,
+    featureImportance: uploadedFeatureImportance,
+    performanceDistribution: uploadedPerfDist
+  } = useDataset();
 
-  // Use analysis data if available, otherwise use mock data
-  const hasAnalysis = !!analysis;
+  // Use uploaded data if available, otherwise use mock data
+  const hasData = hasUploadedData || !!analysis;
 
-  const totalEmployees = hasAnalysis ? analysis.summary.total_employees : 398;
-  const avgPerformance = hasAnalysis ? analysis.summary.avg_performance : 82.34;
-  const avgSatisfaction = hasAnalysis ? analysis.summary.avg_satisfaction : 4.2;
+  const totalEmployees = hasUploadedData 
+    ? employees.length 
+    : (analysis?.summary.total_employees ?? 398);
   
-  const deptStats = hasAnalysis 
-    ? analysis.department_stats.map(d => ({
+  const avgPerformance = hasUploadedData 
+    ? (employees.reduce((sum, e) => sum + e.performanceScore, 0) / employees.length || 0)
+    : (analysis?.summary.avg_performance ?? 82.34);
+  
+  const avgSatisfaction = hasUploadedData 
+    ? (employees.reduce((sum, e) => sum + e.satisfactionScore, 0) / employees.length || 0)
+    : (analysis?.summary.avg_satisfaction ?? 4.2);
+  
+  const departments = hasUploadedData 
+    ? [...new Set(employees.map(e => e.department))]
+    : (analysis?.summary.departments ?? ['Engineering', 'Sales', 'HR', 'Marketing', 'Finance']);
+
+  const deptStats = hasUploadedData 
+    ? uploadedDeptStats.map(d => ({
         department: d.department,
-        avgPerformance: d.avg_performance,
-        employeeCount: d.count
+        avgPerformance: d.avgPerformance,
+        employeeCount: d.employeeCount
       }))
-    : departmentStats;
+    : (analysis 
+        ? analysis.department_stats.map(d => ({
+            department: d.department,
+            avgPerformance: d.avg_performance,
+            employeeCount: d.count
+          }))
+        : mockDeptStats);
 
-  const perfDistribution = hasAnalysis 
-    ? analysis.performance_distribution 
-    : performanceDistribution;
+  const perfDistribution = hasUploadedData 
+    ? uploadedPerfDist 
+    : (analysis?.performance_distribution ?? mockPerfDist);
 
-  const riskDistribution = hasAnalysis 
+  const riskDistribution = hasUploadedData 
     ? [
-        { name: 'Low Risk', value: analysis.summary.risk_distribution.low, color: 'hsl(142, 76%, 45%)' },
-        { name: 'Medium Risk', value: analysis.summary.risk_distribution.medium, color: 'hsl(38, 92%, 50%)' },
-        { name: 'High Risk', value: analysis.summary.risk_distribution.high, color: 'hsl(0, 72%, 51%)' },
+        { name: 'Low Risk', value: employees.filter(e => e.performanceCategory === 'Low').length, color: 'hsl(0, 72%, 51%)' },
+        { name: 'Medium Risk', value: employees.filter(e => e.performanceCategory === 'Medium').length, color: 'hsl(38, 92%, 50%)' },
+        { name: 'High Performers', value: employees.filter(e => e.performanceCategory === 'High').length, color: 'hsl(142, 76%, 45%)' },
       ]
-    : null;
+    : (analysis 
+        ? [
+            { name: 'Low Risk', value: analysis.summary.risk_distribution.low, color: 'hsl(142, 76%, 45%)' },
+            { name: 'Medium Risk', value: analysis.summary.risk_distribution.medium, color: 'hsl(38, 92%, 50%)' },
+            { name: 'High Risk', value: analysis.summary.risk_distribution.high, color: 'hsl(0, 72%, 51%)' },
+          ]
+        : null);
 
-  const featureImportance = hasAnalysis
-    ? analysis.feature_correlations.slice(0, 5).map((f, idx) => ({
-        name: f.feature.replace(/_/g, ' '),
-        value: Math.abs(f.correlation * 100),
+  const featureImportance = hasUploadedData
+    ? uploadedFeatureImportance.slice(0, 5).map((f, idx) => ({
+        name: f.feature,
+        value: f.importance * 100,
         color: ['bg-primary', 'bg-accent', 'bg-success', 'bg-warning', 'bg-chart-5'][idx]
       }))
-    : [
-        { name: 'Employee Satisfaction', value: 28.5, color: 'bg-primary' },
-        { name: 'Training Hours', value: 19.8, color: 'bg-accent' },
-        { name: 'Years at Company', value: 15.6, color: 'bg-success' },
-        { name: 'Work Hours/Week', value: 12.4, color: 'bg-warning' },
-        { name: 'Overtime Hours', value: 9.8, color: 'bg-chart-5' },
-      ];
+    : (analysis
+        ? analysis.feature_correlations.slice(0, 5).map((f, idx) => ({
+            name: f.feature.replace(/_/g, ' '),
+            value: Math.abs(f.correlation * 100),
+            color: ['bg-primary', 'bg-accent', 'bg-success', 'bg-warning', 'bg-chart-5'][idx]
+          }))
+        : mockFeatureImportance.slice(0, 5).map((f, idx) => ({
+            name: f.feature,
+            value: f.importance * 100,
+            color: ['bg-primary', 'bg-accent', 'bg-success', 'bg-warning', 'bg-chart-5'][idx]
+          })));
 
-  const trends = hasAnalysis && analysis.trends
+  const trends = analysis?.trends
     ? analysis.trends.monthly_performance.map(t => ({
         month: t.month,
         avgPerformance: t.performance,
         predictions: t.performance * (0.95 + Math.random() * 0.1)
       }))
-    : performanceTrends;
+    : mockTrends;
 
   return (
     <div className="space-y-6">
       {/* Dataset Status Banner */}
-      {hasAnalysis && (
+      {hasData && datasetName && (
         <div className="bg-primary/10 border border-primary/20 rounded-xl p-4 flex items-center gap-4">
           <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
             <Upload className="w-5 h-5 text-primary" />
@@ -75,7 +117,7 @@ export function OverviewSection() {
           <div className="flex-1">
             <p className="font-medium text-primary">Dataset Loaded: {datasetName}</p>
             <p className="text-sm text-muted-foreground">
-              Showing insights from {totalEmployees} employees across {analysis.summary.departments.length} departments
+              Showing insights from {totalEmployees} employees across {departments.length} departments
             </p>
           </div>
         </div>
@@ -109,7 +151,7 @@ export function OverviewSection() {
         <StatCard
           title="Avg Performance"
           value={`${avgPerformance.toFixed(2)}%`}
-          subtitle={hasAnalysis ? "From dataset analysis" : "R² Score: 0.8234"}
+          subtitle={hasData ? "From dataset analysis" : "R² Score: 0.8234"}
           icon={Target}
           trend={{ value: 3.8, isPositive: true }}
           variant="success"
@@ -126,7 +168,7 @@ export function OverviewSection() {
         />
         <StatCard
           title="Departments"
-          value={hasAnalysis ? analysis.summary.departments.length.toString() : "5"}
+          value={departments.length.toString()}
           subtitle="Active departments"
           icon={Clock}
           trend={{ value: 8.5, isPositive: true }}
@@ -166,7 +208,7 @@ export function OverviewSection() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <ChartCard 
           title="Performance Trends" 
-          subtitle={hasAnalysis ? "Monthly performance from dataset" : "Actual vs Predicted performance over time"}
+          subtitle={hasData ? "Monthly performance from dataset" : "Actual vs Predicted performance over time"}
           delay={400}
         >
           <ResponsiveContainer width="100%" height={300}>
@@ -181,14 +223,15 @@ export function OverviewSection() {
                   <stop offset="95%" stopColor="hsl(260, 65%, 60%)" stopOpacity={0}/>
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(222, 47%, 16%)" />
-              <XAxis dataKey="month" stroke="hsl(215, 20%, 55%)" fontSize={12} />
-              <YAxis stroke="hsl(215, 20%, 55%)" fontSize={12} domain={[65, 90]} />
+              <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+              <XAxis dataKey="month" className="fill-muted-foreground" fontSize={12} />
+              <YAxis className="fill-muted-foreground" fontSize={12} domain={[65, 90]} />
               <Tooltip 
                 contentStyle={{ 
-                  backgroundColor: 'hsl(222, 47%, 8%)', 
-                  border: '1px solid hsl(222, 47%, 16%)',
-                  borderRadius: '8px'
+                  backgroundColor: 'hsl(var(--card))', 
+                  border: '1px solid hsl(var(--border))',
+                  borderRadius: '8px',
+                  color: 'hsl(var(--foreground))'
                 }}
               />
               <Area 
@@ -218,14 +261,15 @@ export function OverviewSection() {
         >
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={deptStats} layout="vertical">
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(222, 47%, 16%)" />
-              <XAxis type="number" stroke="hsl(215, 20%, 55%)" fontSize={12} domain={[0, 100]} />
-              <YAxis dataKey="department" type="category" stroke="hsl(215, 20%, 55%)" fontSize={12} width={80} />
+              <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+              <XAxis type="number" className="fill-muted-foreground" fontSize={12} domain={[0, 100]} />
+              <YAxis dataKey="department" type="category" className="fill-muted-foreground" fontSize={12} width={80} />
               <Tooltip 
                 contentStyle={{ 
-                  backgroundColor: 'hsl(222, 47%, 8%)', 
-                  border: '1px solid hsl(222, 47%, 16%)',
-                  borderRadius: '8px'
+                  backgroundColor: 'hsl(var(--card))', 
+                  border: '1px solid hsl(var(--border))',
+                  borderRadius: '8px',
+                  color: 'hsl(var(--foreground))'
                 }}
               />
               <Bar 
@@ -248,14 +292,15 @@ export function OverviewSection() {
         >
           <ResponsiveContainer width="100%" height={250}>
             <BarChart data={perfDistribution}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(222, 47%, 16%)" />
-              <XAxis dataKey="range" stroke="hsl(215, 20%, 55%)" fontSize={12} />
-              <YAxis stroke="hsl(215, 20%, 55%)" fontSize={12} />
+              <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+              <XAxis dataKey="range" className="fill-muted-foreground" fontSize={12} />
+              <YAxis className="fill-muted-foreground" fontSize={12} />
               <Tooltip 
                 contentStyle={{ 
-                  backgroundColor: 'hsl(222, 47%, 8%)', 
-                  border: '1px solid hsl(222, 47%, 16%)',
-                  borderRadius: '8px'
+                  backgroundColor: 'hsl(var(--card))', 
+                  border: '1px solid hsl(var(--border))',
+                  borderRadius: '8px',
+                  color: 'hsl(var(--foreground))'
                 }}
               />
               <Bar dataKey="count" fill="hsl(260, 65%, 60%)" radius={[4, 4, 0, 0]} name="Employees" />
@@ -264,8 +309,8 @@ export function OverviewSection() {
         </ChartCard>
 
         <ChartCard 
-          title={hasAnalysis ? "Feature Correlations" : "Top Performance Drivers"}
-          subtitle={hasAnalysis ? "Correlation with performance" : "Feature importance from XGBoost"}
+          title={hasData ? "Feature Correlations" : "Top Performance Drivers"}
+          subtitle={hasData ? "Correlation with performance" : "Feature importance from XGBoost"}
           className="lg:col-span-2"
           delay={700}
         >
@@ -300,7 +345,7 @@ export function OverviewSection() {
       </div>
 
       {/* No Dataset Prompt */}
-      {!hasAnalysis && !isAnalyzing && (
+      {!hasData && !isAnalyzing && (
         <div className="bg-muted/20 border border-dashed border-border rounded-xl p-8 text-center">
           <Upload className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
           <h3 className="text-lg font-medium mb-2">No Dataset Uploaded</h3>
