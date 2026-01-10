@@ -14,21 +14,23 @@ export function ChartCard({ title, subtitle, children, className, action, delay 
   return (
     <div 
       className={cn(
-        "glass-card p-6 animate-slide-up",
+        "glass-card p-4 sm:p-6 animate-slide-up",
         className
       )}
       style={{ animationDelay: `${delay}ms` }}
     >
-      <div className="flex items-start justify-between mb-6">
-        <div>
-          <h3 className="text-lg font-semibold">{title}</h3>
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 sm:gap-4 mb-4 sm:mb-6">
+        <div className="min-w-0">
+          <h3 className="text-base sm:text-lg font-semibold truncate">{title}</h3>
           {subtitle && (
-            <p className="text-sm text-muted-foreground mt-1">{subtitle}</p>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1 line-clamp-2">{subtitle}</p>
           )}
         </div>
-        {action}
+        {action && <div className="flex-shrink-0">{action}</div>}
       </div>
-      {children}
+      <div className="min-h-0 overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
+        {children}
+      </div>
     </div>
   );
 }
