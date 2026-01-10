@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { employees, Employee } from '@/data/mockData';
+import { employees as mockEmployees, Employee } from '@/data/mockData';
 import { ChartCard } from './ChartCard';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { Search, Filter, ChevronUp, ChevronDown, Download, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { useDataset } from '@/contexts/DatasetContext';
 
 type SortField = 'name' | 'performanceScore' | 'satisfactionScore' | 'department';
 type SortDirection = 'asc' | 'desc';
@@ -21,6 +22,10 @@ export function EmployeesSection() {
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
+  const { employees: uploadedEmployees, hasUploadedData } = useDataset();
+
+  // Use uploaded data if available, otherwise use mock data
+  const employees: Employee[] = hasUploadedData ? uploadedEmployees : mockEmployees;
 
   const departments = ['all', ...new Set(employees.map(e => e.department))];
 

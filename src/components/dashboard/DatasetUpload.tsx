@@ -26,7 +26,7 @@ export function DatasetUpload() {
   const [previewData, setPreviewData] = useState<Record<string, any>[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
-  const { setAnalysis, setDatasetName, setIsAnalyzing } = useDataset();
+  const { setAnalysis, setDatasetName, setIsAnalyzing, setRawData, resetDataset } = useDataset();
 
   const totalPages = Math.ceil(previewData.length / ITEMS_PER_PAGE);
   const paginatedData = previewData.slice(
@@ -119,6 +119,9 @@ export function DatasetUpload() {
 
       setPreviewData(data);
       setDatasetName(file.name);
+      
+      // Store raw data in context for all sections to consume
+      setRawData(data);
 
       // Analyze dataset via API
       setUploadedFile(prev => prev ? { ...prev, status: 'analyzing' } : null);
@@ -126,7 +129,7 @@ export function DatasetUpload() {
 
       try {
         // Local analysis since backend doesn't have this endpoint
-        const departments = [...new Set(data.map((d: any) => d.Department).filter(Boolean))];
+        const departments = [...new Set(data.map((d: any) => d.Department || d.department).filter(Boolean))];
         setUploadedFile(prev => prev ? { ...prev, status: 'complete' } : null);
         
         toast({
@@ -191,8 +194,7 @@ export function DatasetUpload() {
     setUploadedFile(null);
     setCurrentPage(1);
     setPreviewData([]);
-    setAnalysis(null);
-    setDatasetName(null);
+    resetDataset();
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
