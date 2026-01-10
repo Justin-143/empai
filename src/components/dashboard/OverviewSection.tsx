@@ -107,38 +107,38 @@ export function OverviewSection() {
     : mockTrends;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Dataset Status Banner */}
       {hasData && datasetName && (
-        <div className="bg-primary/10 border border-primary/20 rounded-xl p-4 flex items-center gap-4">
-          <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
-            <Upload className="w-5 h-5 text-primary" />
+        <div className="bg-primary/10 border border-primary/20 rounded-xl p-3 sm:p-4 flex items-center gap-3 sm:gap-4">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-primary/20 flex items-center justify-center flex-shrink-0">
+            <Upload className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
           </div>
-          <div className="flex-1">
-            <p className="font-medium text-primary">Dataset Loaded: {datasetName}</p>
-            <p className="text-sm text-muted-foreground">
-              Showing insights from {totalEmployees} employees across {departments.length} departments
+          <div className="flex-1 min-w-0">
+            <p className="font-medium text-primary text-sm sm:text-base truncate">Dataset: {datasetName}</p>
+            <p className="text-xs sm:text-sm text-muted-foreground">
+              {totalEmployees} employees • {departments.length} departments
             </p>
           </div>
         </div>
       )}
 
       {isAnalyzing && (
-        <div className="bg-muted/30 border border-border rounded-xl p-4 flex items-center gap-4">
-          <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center animate-pulse">
-            <Brain className="w-5 h-5 text-muted-foreground" />
+        <div className="bg-muted/30 border border-border rounded-xl p-3 sm:p-4 flex items-center gap-3 sm:gap-4">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-muted flex items-center justify-center animate-pulse flex-shrink-0">
+            <Brain className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
           </div>
-          <div className="flex-1">
-            <p className="font-medium">Analyzing Dataset...</p>
-            <p className="text-sm text-muted-foreground">
-              Please wait while the ML backend processes your data
+          <div className="flex-1 min-w-0">
+            <p className="font-medium text-sm sm:text-base">Analyzing Dataset...</p>
+            <p className="text-xs sm:text-sm text-muted-foreground">
+              Processing your data
             </p>
           </div>
         </div>
       )}
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         <StatCard
           title="Total Employees"
           value={totalEmployees.toString()}
@@ -179,23 +179,23 @@ export function OverviewSection() {
 
       {/* Risk Distribution (only when dataset is loaded) */}
       {riskDistribution && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
           {riskDistribution.map((risk, idx) => (
             <div 
               key={risk.name}
-              className="bg-card border border-border rounded-xl p-4 flex items-center gap-4"
+              className="bg-card border border-border rounded-xl p-3 sm:p-4 flex items-center gap-3 sm:gap-4"
             >
               <div 
-                className="w-12 h-12 rounded-lg flex items-center justify-center"
+                className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center flex-shrink-0"
                 style={{ backgroundColor: `${risk.color}20` }}
               >
-                <span className="text-xl font-bold" style={{ color: risk.color }}>
+                <span className="text-lg sm:text-xl font-bold" style={{ color: risk.color }}>
                   {risk.value}
                 </span>
               </div>
-              <div>
-                <p className="font-medium">{risk.name}</p>
-                <p className="text-sm text-muted-foreground">
+              <div className="min-w-0">
+                <p className="font-medium text-sm sm:text-base truncate">{risk.name}</p>
+                <p className="text-xs sm:text-sm text-muted-foreground">
                   {((risk.value / totalEmployees) * 100).toFixed(1)}% of workforce
                 </p>
               </div>
@@ -205,13 +205,13 @@ export function OverviewSection() {
       )}
 
       {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         <ChartCard 
           title="Performance Trends" 
           subtitle={hasData ? "Monthly performance from dataset" : "Actual vs Predicted performance over time"}
           delay={400}
         >
-          <ResponsiveContainer width="100%" height={300}>
+          <ResponsiveContainer width="100%" height={250} className="min-h-[200px] sm:min-h-[250px] lg:min-h-[300px]">
             <AreaChart data={trends}>
               <defs>
                 <linearGradient id="colorActual" x1="0" y1="0" x2="0" y2="1">
@@ -259,11 +259,11 @@ export function OverviewSection() {
           subtitle="Average performance by department"
           delay={500}
         >
-          <ResponsiveContainer width="100%" height={300}>
+          <ResponsiveContainer width="100%" height={250} className="min-h-[200px] sm:min-h-[250px] lg:min-h-[300px]">
             <BarChart data={deptStats} layout="vertical">
               <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-              <XAxis type="number" className="fill-muted-foreground" fontSize={12} domain={[0, 100]} />
-              <YAxis dataKey="department" type="category" className="fill-muted-foreground" fontSize={12} width={80} />
+              <XAxis type="number" className="fill-muted-foreground" fontSize={10} domain={[0, 100]} />
+              <YAxis dataKey="department" type="category" className="fill-muted-foreground" fontSize={10} width={60} tickFormatter={(value) => value.length > 8 ? value.slice(0, 8) + '...' : value} />
               <Tooltip 
                 contentStyle={{ 
                   backgroundColor: 'hsl(var(--card))', 
@@ -284,17 +284,17 @@ export function OverviewSection() {
       </div>
 
       {/* Bottom Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         <ChartCard 
           title="Performance Distribution" 
           subtitle="Employee score ranges"
           delay={600}
         >
-          <ResponsiveContainer width="100%" height={250}>
+          <ResponsiveContainer width="100%" height={200} className="min-h-[180px] sm:min-h-[220px]">
             <BarChart data={perfDistribution}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-              <XAxis dataKey="range" className="fill-muted-foreground" fontSize={12} />
-              <YAxis className="fill-muted-foreground" fontSize={12} />
+              <XAxis dataKey="range" className="fill-muted-foreground" fontSize={10} />
+              <YAxis className="fill-muted-foreground" fontSize={10} />
               <Tooltip 
                 contentStyle={{ 
                   backgroundColor: 'hsl(var(--card))', 
@@ -314,12 +314,12 @@ export function OverviewSection() {
           className="lg:col-span-2"
           delay={700}
         >
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {featureImportance.map((item, index) => (
-              <div key={item.name} className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">{item.name}</span>
-                  <span className="font-mono font-medium">
+              <div key={item.name} className="space-y-1.5 sm:space-y-2">
+                <div className="flex justify-between text-xs sm:text-sm gap-2">
+                  <span className="text-muted-foreground truncate">{item.name}</span>
+                  <span className="font-mono font-medium flex-shrink-0">
                     <AnimatedNumber 
                       value={item.value} 
                       decimals={1}
@@ -346,13 +346,13 @@ export function OverviewSection() {
 
       {/* No Dataset Prompt */}
       {!hasData && !isAnalyzing && (
-        <div className="bg-muted/20 border border-dashed border-border rounded-xl p-8 text-center">
-          <Upload className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-          <h3 className="text-lg font-medium mb-2">No Dataset Uploaded</h3>
-          <p className="text-muted-foreground mb-4">
+        <div className="bg-muted/20 border border-dashed border-border rounded-xl p-6 sm:p-8 text-center">
+          <Upload className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-3 sm:mb-4 text-muted-foreground" />
+          <h3 className="text-base sm:text-lg font-medium mb-2">No Dataset Uploaded</h3>
+          <p className="text-sm sm:text-base text-muted-foreground mb-3 sm:mb-4">
             Upload your employee dataset to see real insights and ML-powered analytics
           </p>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-xs sm:text-sm text-muted-foreground">
             Currently showing sample data. Go to "Dataset Upload" section to load your data.
           </p>
         </div>

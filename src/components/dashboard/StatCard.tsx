@@ -75,16 +75,16 @@ export function StatCard({ title, value, subtitle, icon: Icon, trend, variant = 
       )} />
       
       <div className="relative z-10">
-        <div className="flex items-start justify-between mb-4">
+        <div className="flex items-start justify-between mb-3 sm:mb-4">
           <div className={cn(
-            "p-3 rounded-xl transition-transform duration-300 group-hover:scale-110",
+            "p-2 sm:p-3 rounded-lg sm:rounded-xl transition-transform duration-300 group-hover:scale-110",
             iconStyles[variant]
           )}>
-            <Icon className="w-5 h-5" />
+            <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
           {trend && (
             <div className={cn(
-              "flex items-center gap-1 text-sm font-medium px-2 py-1 rounded-full",
+              "flex items-center gap-1 text-xs sm:text-sm font-medium px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full",
               trend.isPositive 
                 ? "bg-success/20 text-success" 
                 : "bg-destructive/20 text-destructive"
@@ -95,11 +95,11 @@ export function StatCard({ title, value, subtitle, icon: Icon, trend, variant = 
           )}
         </div>
         
-        <div className="space-y-1">
-          <p className="text-sm text-muted-foreground font-medium">{title}</p>
-          <p className="text-3xl font-bold tracking-tight font-mono">{formattedValue}</p>
+        <div className="space-y-0.5 sm:space-y-1">
+          <p className="text-xs sm:text-sm text-muted-foreground font-medium">{title}</p>
+          <p className="text-2xl sm:text-3xl font-bold tracking-tight font-mono">{formattedValue}</p>
           {subtitle && (
-            <p className="text-xs text-muted-foreground">{subtitle}</p>
+            <p className="text-[10px] sm:text-xs text-muted-foreground line-clamp-1">{subtitle}</p>
           )}
         </div>
       </div>
