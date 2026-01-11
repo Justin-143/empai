@@ -7,9 +7,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  LineChart, Line, Legend, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Cell
+  RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Cell
 } from 'recharts';
-import { Sparkles, TrendingUp, TrendingDown, Minus, RefreshCw, Play, Target } from 'lucide-react';
+import { 
+  Sparkles, TrendingUp, TrendingDown, Minus, RefreshCw, Play, Target, 
+  Zap, Brain, Heart, Clock, Award, AlertTriangle, CheckCircle2, ArrowRight
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { departmentStats } from '@/data/mockData';
 
@@ -26,6 +29,8 @@ interface ScenarioResult {
 interface Scenario {
   name: string;
   description: string;
+  icon: React.ElementType;
+  color: string;
   adjustments: {
     satisfaction?: number;
     training?: number;
@@ -38,33 +43,42 @@ interface Scenario {
 const presetScenarios: Scenario[] = [
   {
     name: 'Training Boost',
-    description: 'Increase training hours by 20%',
+    description: '+20% training hours',
+    icon: Brain,
+    color: 'from-blue-500 to-cyan-400',
     adjustments: { training: 20 }
   },
   {
-    name: 'Workload Reduction',
-    description: 'Reduce overtime by 50%',
+    name: 'Work-Life Balance',
+    description: '-50% overtime',
+    icon: Heart,
+    color: 'from-pink-500 to-rose-400',
     adjustments: { overtime: -50 }
   },
   {
-    name: 'Engagement Initiative',
-    description: 'Improve satisfaction by 15%',
+    name: 'Engagement Drive',
+    description: '+15% satisfaction',
+    icon: Sparkles,
+    color: 'from-amber-500 to-yellow-400',
     adjustments: { satisfaction: 15 }
   },
   {
     name: 'Wellness Program',
-    description: 'Reduce sick days by 30%',
+    description: '-30% sick days',
+    icon: Heart,
+    color: 'from-green-500 to-emerald-400',
     adjustments: { sickDays: -30 }
   },
   {
-    name: 'Combined Optimization',
-    description: 'Training +10%, Overtime -25%, Satisfaction +10%',
+    name: 'Full Optimization',
+    description: 'All factors improved',
+    icon: Zap,
+    color: 'from-violet-500 to-purple-400',
     adjustments: { training: 10, overtime: -25, satisfaction: 10 }
   }
 ];
 
 export function WhatIfSection() {
-  // Baseline values (current average)
   const [baseline] = useState({
     satisfaction: 3.8,
     trainingHours: 35,
@@ -73,7 +87,6 @@ export function WhatIfSection() {
     sickDays: 5
   });
 
-  // Adjustment percentages
   const [satisfactionChange, setSatisfactionChange] = useState([0]);
   const [trainingChange, setTrainingChange] = useState([0]);
   const [workHoursChange, setWorkHoursChange] = useState([0]);
@@ -82,6 +95,7 @@ export function WhatIfSection() {
   const [selectedDepartment, setSelectedDepartment] = useState('All');
   const [isSimulating, setIsSimulating] = useState(false);
   const [result, setResult] = useState<ScenarioResult | null>(null);
+  const [activeScenario, setActiveScenario] = useState<string | null>(null);
 
   const adjustedValues = useMemo(() => ({
     satisfaction: baseline.satisfaction * (1 + satisfactionChange[0] / 100),
@@ -95,7 +109,6 @@ export function WhatIfSection() {
     setIsSimulating(true);
 
     setTimeout(() => {
-      // Feature importance weights from XGBoost
       const weights = {
         satisfaction: 0.285,
         training: 0.198,
@@ -104,10 +117,8 @@ export function WhatIfSection() {
         sickDays: 0.072
       };
 
-      // Calculate baseline score
-      const baselineScore = 75; // Average baseline
+      const baselineScore = 75;
 
-      // Calculate impact of each change
       const impactBreakdown = [
         {
           factor: 'Satisfaction',
@@ -121,17 +132,17 @@ export function WhatIfSection() {
         },
         {
           factor: 'Work Hours',
-          impact: workHoursChange[0] * weights.workHours * -0.2, // More hours = slight negative
+          impact: workHoursChange[0] * weights.workHours * -0.2,
           direction: workHoursChange[0] > 5 ? 'negative' : workHoursChange[0] < -5 ? 'positive' : 'neutral'
         },
         {
           factor: 'Overtime',
-          impact: overtimeChange[0] * weights.overtime * -0.5, // More overtime = negative
+          impact: overtimeChange[0] * weights.overtime * -0.5,
           direction: overtimeChange[0] > 0 ? 'negative' : overtimeChange[0] < 0 ? 'positive' : 'neutral'
         },
         {
           factor: 'Sick Days',
-          impact: sickDaysChange[0] * weights.sickDays * -0.6, // More sick days = negative
+          impact: sickDaysChange[0] * weights.sickDays * -0.6,
           direction: sickDaysChange[0] > 0 ? 'negative' : sickDaysChange[0] < 0 ? 'positive' : 'neutral'
         }
       ] as ScenarioResult['impactBreakdown'];
@@ -141,7 +152,6 @@ export function WhatIfSection() {
       const delta = newScore - baselineScore;
       const percentChange = (delta / baselineScore) * 100;
 
-      // Determine risk level based on negative factors
       const negativeImpacts = impactBreakdown.filter(i => i.direction === 'negative').length;
       const riskLevel = negativeImpacts >= 3 ? 'high' : negativeImpacts >= 1 ? 'medium' : 'low';
 
@@ -160,6 +170,7 @@ export function WhatIfSection() {
   };
 
   const applyPreset = (scenario: Scenario) => {
+    setActiveScenario(scenario.name);
     setSatisfactionChange([scenario.adjustments.satisfaction || 0]);
     setTrainingChange([scenario.adjustments.training || 0]);
     setOvertimeChange([scenario.adjustments.overtime || 0]);
@@ -168,6 +179,7 @@ export function WhatIfSection() {
   };
 
   const resetAll = () => {
+    setActiveScenario(null);
     setSatisfactionChange([0]);
     setTrainingChange([0]);
     setWorkHoursChange([0]);
@@ -176,16 +188,14 @@ export function WhatIfSection() {
     setResult(null);
   };
 
-  // Chart data for impact visualization
   const impactChartData = result?.impactBreakdown.map(item => ({
     factor: item.factor,
     impact: Math.round(item.impact * 10) / 10,
-    fill: item.direction === 'positive' ? 'hsl(142, 76%, 45%)' : 
-          item.direction === 'negative' ? 'hsl(0, 72%, 51%)' : 
-          'hsl(215, 20%, 55%)'
+    fill: item.direction === 'positive' ? 'hsl(var(--success))' : 
+          item.direction === 'negative' ? 'hsl(var(--destructive))' : 
+          'hsl(var(--muted-foreground))'
   })) || [];
 
-  // Comparison radar data
   const radarData = [
     { metric: 'Satisfaction', baseline: baseline.satisfaction * 20, adjusted: adjustedValues.satisfaction * 20 },
     { metric: 'Training', baseline: baseline.trainingHours, adjusted: adjustedValues.trainingHours },
@@ -194,61 +204,104 @@ export function WhatIfSection() {
     { metric: 'Productivity', baseline: baseline.workHours * 1.5, adjusted: adjustedValues.workHours * 1.5 },
   ];
 
-  // Department impact projection
-  const departmentImpact = departmentStats.map(dept => ({
-    department: dept.department,
-    current: dept.avgPerformance,
-    projected: Math.min(100, Math.max(0, dept.avgPerformance + (result?.delta || 0) * (0.8 + Math.random() * 0.4)))
-  }));
-
   return (
     <div className="space-y-6">
-      {/* Preset Scenarios */}
-      <ChartCard 
-        title="Quick Scenarios" 
-        subtitle="Apply preset simulation scenarios"
-        delay={0}
-      >
-        <div className="flex flex-wrap gap-3">
-          {presetScenarios.map((scenario, index) => (
-            <Button
+      {/* Hero Banner */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/20 via-accent/10 to-transparent border border-primary/20 p-6 sm:p-8">
+        <div className="absolute inset-0 bg-grid-pattern opacity-5" />
+        <div className="absolute -top-24 -right-24 w-64 h-64 bg-primary/20 rounded-full blur-3xl" />
+        <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-accent/20 rounded-full blur-3xl" />
+        
+        <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center gap-6">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg shadow-primary/25">
+            <Target className="w-8 h-8 sm:w-10 sm:h-10 text-primary-foreground" />
+          </div>
+          <div className="flex-1">
+            <h2 className="text-2xl sm:text-3xl font-bold mb-2">What-If Scenario Builder</h2>
+            <p className="text-muted-foreground text-sm sm:text-base max-w-2xl">
+              Simulate the impact of organizational changes before implementation. 
+              Adjust key factors and see real-time predictions powered by ML models.
+            </p>
+          </div>
+          <div className="hidden lg:flex items-center gap-3 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-background/50 border border-border">
+              <Brain className="w-4 h-4 text-primary" />
+              <span>XGBoost Model</span>
+            </div>
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-background/50 border border-border">
+              <Zap className="w-4 h-4 text-accent" />
+              <span>Real-time Analysis</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Quick Scenarios - Visual Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+        {presetScenarios.map((scenario, index) => {
+          const Icon = scenario.icon;
+          const isActive = activeScenario === scenario.name;
+          
+          return (
+            <button
               key={scenario.name}
-              variant="outline"
-              size="sm"
               onClick={() => applyPreset(scenario)}
-              className="animate-fade-in"
+              className={cn(
+                "group relative overflow-hidden rounded-xl p-4 text-left transition-all duration-300",
+                "border-2 hover:scale-[1.02] hover:shadow-lg",
+                isActive 
+                  ? "border-primary bg-primary/10 shadow-lg shadow-primary/20" 
+                  : "border-border bg-card hover:border-primary/50"
+              )}
               style={{ animationDelay: `${index * 50}ms` }}
             >
-              <Sparkles className="w-3 h-3 mr-2" />
-              {scenario.name}
-            </Button>
-          ))}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={resetAll}
-            className="text-muted-foreground"
-          >
-            <RefreshCw className="w-3 h-3 mr-2" />
-            Reset All
-          </Button>
-        </div>
-      </ChartCard>
+              <div className={cn(
+                "absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity",
+                `bg-gradient-to-br ${scenario.color}`
+              )} style={{ opacity: isActive ? 0.1 : undefined }} />
+              
+              <div className={cn(
+                "w-10 h-10 rounded-lg flex items-center justify-center mb-3 transition-colors",
+                `bg-gradient-to-br ${scenario.color}`
+              )}>
+                <Icon className="w-5 h-5 text-white" />
+              </div>
+              
+              <h3 className="font-semibold text-sm mb-1 truncate">{scenario.name}</h3>
+              <p className="text-xs text-muted-foreground truncate">{scenario.description}</p>
+              
+              {isActive && (
+                <div className="absolute top-2 right-2">
+                  <CheckCircle2 className="w-4 h-4 text-primary" />
+                </div>
+              )}
+            </button>
+          );
+        })}
+      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Scenario Builder */}
-        <ChartCard 
-          title="Scenario Builder" 
-          subtitle="Adjust factors to simulate impact"
-          className="lg:col-span-1"
-          delay={100}
-        >
-          <div className="space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Scenario Builder - Enhanced */}
+        <div className="lg:col-span-4">
+          <div className="glass-card p-6 h-full space-y-6 border-2 border-border hover:border-primary/30 transition-colors">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-bold text-lg flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-primary" />
+                  Custom Scenario
+                </h3>
+                <p className="text-sm text-muted-foreground">Fine-tune each factor</p>
+              </div>
+              <Button variant="ghost" size="sm" onClick={resetAll} className="text-muted-foreground hover:text-foreground">
+                <RefreshCw className="w-4 h-4" />
+              </Button>
+            </div>
+
             {/* Department Filter */}
             <div className="space-y-2">
-              <Label>Target Department</Label>
+              <Label className="text-xs uppercase tracking-wide text-muted-foreground">Target Department</Label>
               <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
-                <SelectTrigger>
+                <SelectTrigger className="bg-background">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -260,286 +313,254 @@ export function WhatIfSection() {
               </Select>
             </div>
 
-            {/* Satisfaction Change */}
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <Label>Satisfaction Change</Label>
-                <Badge variant={satisfactionChange[0] > 0 ? 'default' : satisfactionChange[0] < 0 ? 'destructive' : 'secondary'}>
-                  {satisfactionChange[0] > 0 ? '+' : ''}{satisfactionChange[0]}%
-                </Badge>
+            {/* Sliders with visual feedback */}
+            <div className="space-y-5">
+              {/* Satisfaction */}
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <Label className="flex items-center gap-2 text-sm">
+                    <Heart className="w-4 h-4 text-pink-500" />
+                    Satisfaction
+                  </Label>
+                  <Badge variant={satisfactionChange[0] > 0 ? 'default' : satisfactionChange[0] < 0 ? 'destructive' : 'secondary'} className="font-mono">
+                    {satisfactionChange[0] > 0 ? '+' : ''}{satisfactionChange[0]}%
+                  </Badge>
+                </div>
+                <Slider
+                  value={satisfactionChange}
+                  onValueChange={setSatisfactionChange}
+                  min={-50}
+                  max={50}
+                  step={5}
+                  className="cursor-pointer"
+                />
               </div>
-              <Slider
-                value={satisfactionChange}
-                onValueChange={setSatisfactionChange}
-                min={-50}
-                max={50}
-                step={5}
-                className="cursor-pointer"
-              />
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>{(baseline.satisfaction * 0.5).toFixed(1)}</span>
-                <span className="text-primary">{adjustedValues.satisfaction.toFixed(2)}</span>
-                <span>{(baseline.satisfaction * 1.5).toFixed(1)}</span>
-              </div>
-            </div>
 
-            {/* Training Change */}
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <Label>Training Hours Change</Label>
-                <Badge variant={trainingChange[0] > 0 ? 'default' : trainingChange[0] < 0 ? 'destructive' : 'secondary'}>
-                  {trainingChange[0] > 0 ? '+' : ''}{trainingChange[0]}%
-                </Badge>
+              {/* Training */}
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <Label className="flex items-center gap-2 text-sm">
+                    <Brain className="w-4 h-4 text-blue-500" />
+                    Training Hours
+                  </Label>
+                  <Badge variant={trainingChange[0] > 0 ? 'default' : trainingChange[0] < 0 ? 'destructive' : 'secondary'} className="font-mono">
+                    {trainingChange[0] > 0 ? '+' : ''}{trainingChange[0]}%
+                  </Badge>
+                </div>
+                <Slider
+                  value={trainingChange}
+                  onValueChange={setTrainingChange}
+                  min={-50}
+                  max={100}
+                  step={5}
+                />
               </div>
-              <Slider
-                value={trainingChange}
-                onValueChange={setTrainingChange}
-                min={-50}
-                max={100}
-                step={5}
-              />
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>{Math.round(baseline.trainingHours * 0.5)}h</span>
-                <span className="text-primary">{Math.round(adjustedValues.trainingHours)}h</span>
-                <span>{Math.round(baseline.trainingHours * 2)}h</span>
-              </div>
-            </div>
 
-            {/* Work Hours Change */}
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <Label>Work Hours Change</Label>
-                <Badge variant={workHoursChange[0] < -10 ? 'default' : workHoursChange[0] > 10 ? 'destructive' : 'secondary'}>
-                  {workHoursChange[0] > 0 ? '+' : ''}{workHoursChange[0]}%
-                </Badge>
+              {/* Work Hours */}
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <Label className="flex items-center gap-2 text-sm">
+                    <Clock className="w-4 h-4 text-amber-500" />
+                    Work Hours
+                  </Label>
+                  <Badge variant={workHoursChange[0] < -10 ? 'default' : workHoursChange[0] > 10 ? 'destructive' : 'secondary'} className="font-mono">
+                    {workHoursChange[0] > 0 ? '+' : ''}{workHoursChange[0]}%
+                  </Badge>
+                </div>
+                <Slider
+                  value={workHoursChange}
+                  onValueChange={setWorkHoursChange}
+                  min={-30}
+                  max={30}
+                  step={5}
+                />
               </div>
-              <Slider
-                value={workHoursChange}
-                onValueChange={setWorkHoursChange}
-                min={-30}
-                max={30}
-                step={5}
-              />
-            </div>
 
-            {/* Overtime Change */}
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <Label>Overtime Change</Label>
-                <Badge variant={overtimeChange[0] < 0 ? 'default' : overtimeChange[0] > 0 ? 'destructive' : 'secondary'}>
-                  {overtimeChange[0] > 0 ? '+' : ''}{overtimeChange[0]}%
-                </Badge>
+              {/* Overtime */}
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <Label className="flex items-center gap-2 text-sm">
+                    <AlertTriangle className="w-4 h-4 text-orange-500" />
+                    Overtime
+                  </Label>
+                  <Badge variant={overtimeChange[0] < 0 ? 'default' : overtimeChange[0] > 0 ? 'destructive' : 'secondary'} className="font-mono">
+                    {overtimeChange[0] > 0 ? '+' : ''}{overtimeChange[0]}%
+                  </Badge>
+                </div>
+                <Slider
+                  value={overtimeChange}
+                  onValueChange={setOvertimeChange}
+                  min={-100}
+                  max={100}
+                  step={10}
+                />
               </div>
-              <Slider
-                value={overtimeChange}
-                onValueChange={setOvertimeChange}
-                min={-100}
-                max={100}
-                step={10}
-              />
-            </div>
 
-            {/* Sick Days Change */}
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <Label>Sick Days Change</Label>
-                <Badge variant={sickDaysChange[0] < 0 ? 'default' : sickDaysChange[0] > 0 ? 'destructive' : 'secondary'}>
-                  {sickDaysChange[0] > 0 ? '+' : ''}{sickDaysChange[0]}%
-                </Badge>
+              {/* Sick Days */}
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <Label className="flex items-center gap-2 text-sm">
+                    <Award className="w-4 h-4 text-green-500" />
+                    Sick Days
+                  </Label>
+                  <Badge variant={sickDaysChange[0] < 0 ? 'default' : sickDaysChange[0] > 0 ? 'destructive' : 'secondary'} className="font-mono">
+                    {sickDaysChange[0] > 0 ? '+' : ''}{sickDaysChange[0]}%
+                  </Badge>
+                </div>
+                <Slider
+                  value={sickDaysChange}
+                  onValueChange={setSickDaysChange}
+                  min={-50}
+                  max={100}
+                  step={10}
+                />
               </div>
-              <Slider
-                value={sickDaysChange}
-                onValueChange={setSickDaysChange}
-                min={-50}
-                max={100}
-                step={10}
-              />
             </div>
 
             <Button 
               onClick={runSimulation} 
-              className="w-full"
+              className="w-full h-12 text-base"
               variant="glow"
               disabled={isSimulating}
             >
               {isSimulating ? (
                 <span className="flex items-center gap-2">
-                  <span className="animate-spin">⟳</span>
+                  <span className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
                   Simulating...
                 </span>
               ) : (
                 <span className="flex items-center gap-2">
-                  <Play className="w-4 h-4" />
+                  <Play className="w-5 h-5" />
                   Run Simulation
+                  <ArrowRight className="w-4 h-4" />
                 </span>
               )}
             </Button>
           </div>
-        </ChartCard>
+        </div>
 
-        {/* Results Panel */}
-        <ChartCard 
-          title="Simulation Results" 
-          subtitle="Predicted impact of changes"
-          className="lg:col-span-2"
-          delay={200}
-        >
-          {result ? (
-            <div className="space-y-6 animate-fade-in">
-              {/* Score Comparison */}
-              <div className="grid grid-cols-3 gap-4 text-center">
-                <div className="glass-card p-4">
-                  <p className="text-sm text-muted-foreground mb-1">Baseline</p>
-                  <p className="text-3xl font-bold">{result.baselineScore}</p>
-                </div>
-                <div className="glass-card p-4">
-                  <p className="text-sm text-muted-foreground mb-1">Change</p>
-                  <p className={cn(
-                    "text-3xl font-bold flex items-center justify-center gap-1",
-                    result.delta > 0 ? "text-success" : result.delta < 0 ? "text-destructive" : ""
+        {/* Results Panel - Enhanced */}
+        <div className="lg:col-span-8">
+          <div className="glass-card p-6 h-full">
+            {result ? (
+              <div className="space-y-6 animate-fade-in">
+                {/* Score Comparison - Hero Style */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="text-center p-6 rounded-xl bg-muted/30 border border-border">
+                    <p className="text-sm text-muted-foreground mb-2 uppercase tracking-wide">Current Score</p>
+                    <p className="text-4xl sm:text-5xl font-bold text-muted-foreground">{result.baselineScore}</p>
+                  </div>
+                  
+                  <div className="text-center p-6 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 border border-primary/30">
+                    <p className="text-sm text-muted-foreground mb-2 uppercase tracking-wide">Change</p>
+                    <p className={cn(
+                      "text-4xl sm:text-5xl font-bold flex items-center justify-center gap-2",
+                      result.delta > 0 ? "text-green-500" : result.delta < 0 ? "text-red-500" : "text-muted-foreground"
+                    )}>
+                      {result.delta > 0 ? <TrendingUp className="w-8 h-8" /> : 
+                       result.delta < 0 ? <TrendingDown className="w-8 h-8" /> : 
+                       <Minus className="w-8 h-8" />}
+                      {result.delta > 0 ? '+' : ''}{result.delta}
+                    </p>
+                  </div>
+                  
+                  <div className={cn(
+                    "text-center p-6 rounded-xl border-2",
+                    result.category === 'High' ? "bg-green-500/10 border-green-500/50" :
+                    result.category === 'Medium' ? "bg-amber-500/10 border-amber-500/50" :
+                    "bg-red-500/10 border-red-500/50"
                   )}>
-                    {result.delta > 0 ? <TrendingUp className="w-5 h-5" /> : 
-                     result.delta < 0 ? <TrendingDown className="w-5 h-5" /> : 
-                     <Minus className="w-5 h-5" />}
-                    {result.delta > 0 ? '+' : ''}{result.delta}
-                  </p>
+                    <p className="text-sm text-muted-foreground mb-2 uppercase tracking-wide">Projected</p>
+                    <p className={cn(
+                      "text-4xl sm:text-5xl font-bold",
+                      result.category === 'High' ? "text-green-500" :
+                      result.category === 'Medium' ? "text-amber-500" :
+                      "text-red-500"
+                    )}>{result.newScore}</p>
+                  </div>
                 </div>
-                <div className={cn(
-                  "glass-card p-4",
-                  result.category === 'High' ? "border-success/50" :
-                  result.category === 'Medium' ? "border-warning/50" :
-                  "border-destructive/50"
-                )}>
-                  <p className="text-sm text-muted-foreground mb-1">Projected</p>
-                  <p className="text-3xl font-bold">{result.newScore}</p>
+
+                {/* Category & Risk Badges */}
+                <div className="flex items-center justify-center gap-3 flex-wrap">
+                  <Badge className={cn(
+                    "text-base py-2 px-5",
+                    result.category === 'High' ? "bg-green-500/20 text-green-500 hover:bg-green-500/30" :
+                    result.category === 'Medium' ? "bg-amber-500/20 text-amber-500 hover:bg-amber-500/30" :
+                    "bg-red-500/20 text-red-500 hover:bg-red-500/30"
+                  )}>
+                    <Target className="w-4 h-4 mr-2" />
+                    {result.category} Performer
+                  </Badge>
+                  <Badge variant="outline" className={cn(
+                    "text-base py-2 px-5",
+                    result.riskLevel === 'low' ? "border-green-500 text-green-500" :
+                    result.riskLevel === 'medium' ? "border-amber-500 text-amber-500" :
+                    "border-red-500 text-red-500"
+                  )}>
+                    {result.riskLevel === 'low' ? <CheckCircle2 className="w-4 h-4 mr-2" /> : <AlertTriangle className="w-4 h-4 mr-2" />}
+                    {result.riskLevel.charAt(0).toUpperCase() + result.riskLevel.slice(1)} Risk
+                  </Badge>
+                </div>
+
+                {/* Charts Row */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Impact Chart */}
+                  <div className="bg-muted/20 rounded-xl p-4 border border-border">
+                    <h4 className="text-sm font-medium text-muted-foreground mb-4">Factor Impact Analysis</h4>
+                    <ResponsiveContainer width="100%" height={180}>
+                      <BarChart data={impactChartData} layout="vertical">
+                        <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                        <XAxis type="number" className="fill-muted-foreground" fontSize={11} />
+                        <YAxis dataKey="factor" type="category" className="fill-muted-foreground" fontSize={11} width={80} />
+                        <Tooltip 
+                          contentStyle={{ 
+                            backgroundColor: 'hsl(var(--card))', 
+                            border: '1px solid hsl(var(--border))',
+                            borderRadius: '8px',
+                            color: 'hsl(var(--foreground))'
+                          }}
+                        />
+                        <Bar dataKey="impact" radius={[0, 4, 4, 0]}>
+                          {impactChartData.map((entry, index) => (
+                            <Cell key={index} fill={entry.fill} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+
+                  {/* Radar Comparison */}
+                  <div className="bg-muted/20 rounded-xl p-4 border border-border">
+                    <h4 className="text-sm font-medium text-muted-foreground mb-4">Before vs After Comparison</h4>
+                    <ResponsiveContainer width="100%" height={180}>
+                      <RadarChart data={radarData}>
+                        <PolarGrid className="stroke-border" />
+                        <PolarAngleAxis dataKey="metric" className="fill-muted-foreground" fontSize={10} />
+                        <PolarRadiusAxis className="fill-muted-foreground" fontSize={9} />
+                        <Radar name="Baseline" dataKey="baseline" stroke="hsl(var(--muted-foreground))" fill="hsl(var(--muted-foreground))" fillOpacity={0.2} strokeWidth={2} />
+                        <Radar name="Adjusted" dataKey="adjusted" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.3} strokeWidth={2} />
+                      </RadarChart>
+                    </ResponsiveContainer>
+                  </div>
                 </div>
               </div>
-
-              {/* Category Badge */}
-              <div className="flex items-center justify-center gap-4">
-                <Badge className={cn(
-                  "text-lg py-1.5 px-4",
-                  result.category === 'High' ? "bg-success/20 text-success hover:bg-success/30" :
-                  result.category === 'Medium' ? "bg-warning/20 text-warning hover:bg-warning/30" :
-                  "bg-destructive/20 text-destructive hover:bg-destructive/30"
-                )}>
-                  {result.category} Performer
-                </Badge>
-                <Badge variant="outline" className={cn(
-                  result.riskLevel === 'low' ? "border-success text-success" :
-                  result.riskLevel === 'medium' ? "border-warning text-warning" :
-                  "border-destructive text-destructive"
-                )}>
-                  {result.riskLevel.charAt(0).toUpperCase() + result.riskLevel.slice(1)} Risk
-                </Badge>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full min-h-[400px] text-center p-8">
+                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center mb-6 animate-pulse">
+                  <Target className="w-12 h-12 text-primary" />
+                </div>
+                <h3 className="text-xl font-bold mb-2">Ready to Simulate</h3>
+                <p className="text-muted-foreground max-w-md mb-6">
+                  Choose a preset scenario or customize the factors on the left, then click "Run Simulation" to see the projected impact on employee performance.
+                </p>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Zap className="w-4 h-4 text-primary" />
+                  <span>Powered by XGBoost ML Model</span>
+                </div>
               </div>
-
-              {/* Impact Chart */}
-              <div>
-                <h4 className="text-sm font-medium text-muted-foreground mb-3">Factor Impact Breakdown</h4>
-                <ResponsiveContainer width="100%" height={200}>
-                  <BarChart data={impactChartData} layout="vertical">
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(222, 47%, 16%)" />
-                    <XAxis type="number" stroke="hsl(215, 20%, 55%)" fontSize={12} />
-                    <YAxis dataKey="factor" type="category" stroke="hsl(215, 20%, 55%)" fontSize={11} width={80} />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: 'hsl(222, 47%, 8%)', 
-                        border: '1px solid hsl(222, 47%, 16%)',
-                        borderRadius: '8px'
-                      }}
-                      formatter={(value: number) => [`${value > 0 ? '+' : ''}${value} pts`, 'Impact']}
-                    />
-                    <Bar 
-                      dataKey="impact" 
-                      radius={[0, 4, 4, 0]}
-                    >
-                      {impactChartData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.fill} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center h-[350px] text-center">
-              <div className="w-20 h-20 rounded-full bg-secondary/50 flex items-center justify-center mb-4">
-                <Target className="w-10 h-10 text-muted-foreground" />
-              </div>
-              <p className="text-muted-foreground">
-                Adjust parameters and run simulation<br />to see predicted performance impact
-              </p>
-            </div>
-          )}
-        </ChartCard>
-      </div>
-
-      {/* Comparison Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Radar Comparison */}
-        <ChartCard 
-          title="Baseline vs Adjusted" 
-          subtitle="Multi-dimensional comparison"
-          delay={300}
-        >
-          <ResponsiveContainer width="100%" height={300}>
-            <RadarChart data={radarData}>
-              <PolarGrid stroke="hsl(222, 47%, 16%)" />
-              <PolarAngleAxis dataKey="metric" stroke="hsl(215, 20%, 55%)" fontSize={12} />
-              <PolarRadiusAxis stroke="hsl(215, 20%, 55%)" fontSize={10} />
-              <Radar 
-                name="Baseline" 
-                dataKey="baseline" 
-                stroke="hsl(215, 20%, 55%)" 
-                fill="hsl(215, 20%, 55%)" 
-                fillOpacity={0.3}
-                strokeWidth={2}
-              />
-              <Radar 
-                name="Adjusted" 
-                dataKey="adjusted" 
-                stroke="hsl(187, 85%, 53%)" 
-                fill="hsl(187, 85%, 53%)" 
-                fillOpacity={0.3}
-                strokeWidth={2}
-              />
-              <Legend />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: 'hsl(222, 47%, 8%)', 
-                  border: '1px solid hsl(222, 47%, 16%)',
-                  borderRadius: '8px'
-                }}
-              />
-            </RadarChart>
-          </ResponsiveContainer>
-        </ChartCard>
-
-        {/* Department Impact */}
-        <ChartCard 
-          title="Department Impact Projection" 
-          subtitle="Expected performance changes by department"
-          delay={400}
-        >
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={departmentImpact}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(222, 47%, 16%)" />
-              <XAxis dataKey="department" stroke="hsl(215, 20%, 55%)" fontSize={11} />
-              <YAxis stroke="hsl(215, 20%, 55%)" fontSize={12} domain={[60, 100]} />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: 'hsl(222, 47%, 8%)', 
-                  border: '1px solid hsl(222, 47%, 16%)',
-                  borderRadius: '8px'
-                }}
-              />
-              <Legend />
-              <Bar dataKey="current" name="Current" fill="hsl(215, 20%, 55%)" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="projected" name="Projected" fill="hsl(187, 85%, 53%)" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </ChartCard>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

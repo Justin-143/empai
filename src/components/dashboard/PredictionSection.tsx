@@ -52,21 +52,81 @@ export function PredictionSection() {
   // Health check on mount
   useEffect(() => {
     const checkHealth = async () => {
-      try {
-        await healthCheck();
-        setApiStatus('online');
-      } catch {
-        setApiStatus('offline');
-      }
+      const result = await healthCheck();
+      setApiStatus(result.online ? 'online' : 'offline');
     };
     checkHealth();
+    const interval = setInterval(checkHealth, 30000);
+    return () => clearInterval(interval);
   }, []);
+
+  // Simulate prediction locally when backend is offline
+  const simulatePrediction = () => {
+    const weights = {
+      satisfaction: 14,
+      training: 0.55,
+      years: 2.5,
+      workHours: -0.3,
+      overtime: -1.0,
+      sickDays: -1.8,
+      projects: 1.2,
+      promotions: 3.5,
+      teamSize: 0.2,
+      salary: 0.001
+    };
+
+    let score = 25 +
+      satisfactionScore[0] * weights.satisfaction +
+      trainingHours[0] * weights.training +
+      yearsAtCompany[0] * weights.years +
+      (workHoursPerWeek[0] - 40) * weights.workHours +
+      overtimeHours[0] * weights.overtime +
+      sickDays[0] * weights.sickDays +
+      projectsHandled[0] * weights.projects +
+      promotions[0] * weights.promotions +
+      teamSize[0] * weights.teamSize +
+      monthlySalary * weights.salary;
+
+    score = Math.min(100, Math.max(0, score));
+    const category = score < 60 ? 'Low' : score < 80 ? 'Medium' : 'High';
+    const confidence = 75 + Math.random() * 15;
+
+    return {
+      score: Math.round(score),
+      category,
+      confidence,
+      probabilities: {
+        low: category === 'Low' ? 0.6 : 0.15,
+        medium: category === 'Medium' ? 0.55 : 0.25,
+        high: category === 'High' ? 0.7 : 0.2,
+      },
+      riskLevel: category,
+      recommendations: [
+        score < 70 ? 'Consider increasing training hours' : 'Maintain current training schedule',
+        satisfactionScore[0] < 3 ? 'Focus on improving employee satisfaction' : 'Good satisfaction levels',
+        overtimeHours[0] > 10 ? 'Reduce overtime to prevent burnout' : 'Overtime levels are acceptable',
+      ]
+    };
+  };
 
   const handlePredict = async () => {
     setIsLoading(true);
     setError(null);
     
     try {
+      // Use local simulation if backend is offline
+      if (apiStatus === 'offline') {
+        await new Promise(resolve => setTimeout(resolve, 800)); // Simulate delay
+        const simulated = simulatePrediction();
+        setPrediction(simulated as PredictionResult);
+        toast({
+          title: "Simulation Complete (Offline Mode)",
+          description: `Estimated performance score: ${simulated.score}`,
+        });
+        setIsLoading(false);
+        return;
+      }
+
       const payload = {
         age: age,
         gender: gender,
@@ -402,17 +462,17 @@ export function PredictionSection() {
               onClick={handlePredict} 
               className="w-full"
               variant="glow"
-              disabled={isLoading || apiStatus === 'offline'}
+              disabled={isLoading}
             >
               {isLoading ? (
                 <span className="flex items-center gap-2">
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  Predicting...
+                  {apiStatus === 'offline' ? 'Simulating...' : 'Predicting...'}
                 </span>
               ) : (
                 <span className="flex items-center gap-2">
                   <Sparkles className="w-4 h-4" />
-                  Predict Performance
+                  {apiStatus === 'offline' ? 'Simulate Performance' : 'Predict Performance'}
                 </span>
               )}
             </Button>
