@@ -1,9 +1,9 @@
-import { Users, TrendingUp, Brain, Target, Activity, Clock, Upload } from 'lucide-react';
+import { Users, Brain, Target, Clock, Database } from 'lucide-react';
 import { StatCard } from './StatCard';
 import { ChartCard } from './ChartCard';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  BarChart, Bar, PieChart, Pie, Cell, Legend
+  BarChart, Bar
 } from 'recharts';
 import { 
   performanceTrends as mockTrends, 
@@ -13,7 +13,6 @@ import {
 } from '@/data/mockData';
 import { AnimatedNumber } from '@/components/ui/animated-number';
 import { useDataset } from '@/contexts/DatasetContext';
-import { Button } from '@/components/ui/button';
 
 const COLORS = ['hsl(187, 85%, 53%)', 'hsl(260, 65%, 60%)', 'hsl(142, 76%, 45%)', 'hsl(38, 92%, 50%)', 'hsl(0, 72%, 51%)'];
 
@@ -112,7 +111,7 @@ export function OverviewSection() {
       {hasData && datasetName && (
         <div className="bg-primary/10 border border-primary/20 rounded-xl p-3 sm:p-4 flex items-center gap-3 sm:gap-4">
           <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-primary/20 flex items-center justify-center flex-shrink-0">
-            <Upload className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+            <Database className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
           </div>
           <div className="flex-1 min-w-0">
             <p className="font-medium text-primary text-sm sm:text-base truncate">Dataset: {datasetName}</p>
@@ -344,16 +343,12 @@ export function OverviewSection() {
         </ChartCard>
       </div>
 
-      {/* No Dataset Prompt */}
+      {/* Sample Data Notice */}
       {!hasData && !isAnalyzing && (
-        <div className="bg-muted/20 border border-dashed border-border rounded-xl p-6 sm:p-8 text-center">
-          <Upload className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-3 sm:mb-4 text-muted-foreground" />
-          <h3 className="text-base sm:text-lg font-medium mb-2">No Dataset Uploaded</h3>
-          <p className="text-sm sm:text-base text-muted-foreground mb-3 sm:mb-4">
-            Upload your employee dataset to see real insights and ML-powered analytics
-          </p>
-          <p className="text-xs sm:text-sm text-muted-foreground">
-            Currently showing sample data. Go to "Dataset Upload" section to load your data.
+        <div className="bg-muted/20 border border-dashed border-border rounded-xl p-4 sm:p-6 text-center">
+          <Database className="w-8 h-8 sm:w-10 sm:h-10 mx-auto mb-2 sm:mb-3 text-muted-foreground" />
+          <p className="text-sm text-muted-foreground">
+            Showing sample data. Upload a dataset from the sidebar to see your own insights.
           </p>
         </div>
       )}
