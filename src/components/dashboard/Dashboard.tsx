@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Sidebar } from './Sidebar';
 import { OverviewSection } from './OverviewSection';
 import { PredictionSection } from './PredictionSection';
@@ -11,9 +11,11 @@ import { WhatIfSection } from './WhatIfSection';
 import { ProductivitySection } from './ProductivitySection';
 import { SettingsPanel } from './SettingsPanel';
 import { DatasetUpload } from './DatasetUpload';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, Wifi, WifiOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { healthCheck } from '@/services/api';
+import { Badge } from '@/components/ui/badge';
 
 const sectionTitles: Record<string, { title: string; subtitle: string }> = {
   overview: { title: 'Dashboard Overview', subtitle: 'Employee performance insights at a glance' },
@@ -32,7 +34,20 @@ export function Dashboard() {
   const [activeSection, setActiveSection] = useState('overview');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [backendOnline, setBackendOnline] = useState<boolean | null>(null);
   const currentSection = sectionTitles[activeSection];
+
+  // Check backend health on mount and periodically
+  useEffect(() => {
+    const checkHealth = async () => {
+      const result = await healthCheck();
+      setBackendOnline(result.online);
+    };
+    
+    checkHealth();
+    const interval = setInterval(checkHealth, 30000); // Check every 30 seconds
+    return () => clearInterval(interval);
+  }, []);
 
   const handleSectionChange = (section: string) => {
     setActiveSection(section);
@@ -106,6 +121,34 @@ export function Dashboard() {
                 <h1 className="text-xl sm:text-2xl font-bold">{currentSection.title}</h1>
                 <p className="text-sm sm:text-base text-muted-foreground mt-1">{currentSection.subtitle}</p>
               </div>
+              <Badge 
+                variant="outline" 
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium",
+                  backendOnline === null 
+                    ? "border-muted-foreground/30 text-muted-foreground"
+                    : backendOnline 
+                      ? "border-green-500/30 text-green-600 dark:text-green-400 bg-green-500/10" 
+                      : "border-destructive/30 text-destructive bg-destructive/10"
+                )}
+              >
+                {backendOnline === null ? (
+                  <>
+                    <span className="w-2 h-2 rounded-full bg-muted-foreground animate-pulse" />
+                    Checking...
+                  </>
+                ) : backendOnline ? (
+                  <>
+                    <Wifi className="w-3 h-3" />
+                    ML Backend Online
+                  </>
+                ) : (
+                  <>
+                    <WifiOff className="w-3 h-3" />
+                    ML Backend Offline
+                  </>
+                )}
+              </Badge>
             </div>
           </div>
         </header>

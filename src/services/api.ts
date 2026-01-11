@@ -28,9 +28,27 @@ export async function getFeatureImportance() {
 }
 
 export async function healthCheck() {
-  const res = await fetch(`${API_BASE}/api/health`, {
-    headers: { "ngrok-skip-browser-warning": "true" }
-  });
-  const data = await res.json();
-  return { online: data.status === "healthy" };
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    
+    const res = await fetch(`${API_BASE}/api/health`, {
+      headers: { "ngrok-skip-browser-warning": "true" },
+      signal: controller.signal
+    });
+    
+    clearTimeout(timeoutId);
+    
+    if (!res.ok) {
+      return { online: false, error: `Server returned ${res.status}` };
+    }
+    
+    const data = await res.json();
+    return { online: data.status === "healthy" };
+  } catch (error) {
+    return { 
+      online: false, 
+      error: error instanceof Error ? error.message : 'Connection failed' 
+    };
+  }
 }
