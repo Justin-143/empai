@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Sparkles, AlertCircle, CheckCircle2, AlertTriangle, Loader2, Wifi, WifiOff } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Sparkles, AlertCircle, CheckCircle2, AlertTriangle, Loader2, Wifi, WifiOff, RotateCcw, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ChartCard } from './ChartCard';
 import { Label } from '@/components/ui/label';
@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 import { predictPerformance, healthCheck } from '@/services/api';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
 
 interface PredictionResult {
   score: number;
@@ -60,8 +61,30 @@ export function PredictionSection() {
     return () => clearInterval(interval);
   }, []);
 
+  // Reset all fields to defaults
+  const resetFields = useCallback(() => {
+    setAge(30);
+    setGender('Male');
+    setDepartment('Engineering');
+    setEducationLevel("Bachelor's");
+    setYearsAtCompany([5]);
+    setMonthlySalary(5000);
+    setWorkHoursPerWeek([40]);
+    setProjectsHandled([5]);
+    setOvertimeHours([5]);
+    setSickDays([3]);
+    setRemoteWorkFrequency('Hybrid');
+    setTeamSize([8]);
+    setTrainingHours([20]);
+    setPromotions([1]);
+    setSatisfactionScore([3.5]);
+    setJobTitle('Software Engineer');
+    setPrediction(null);
+    setError(null);
+  }, []);
+
   // Simulate prediction locally when backend is offline
-  const simulatePrediction = () => {
+  const simulatePrediction = useCallback(() => {
     const weights = {
       satisfaction: 14,
       training: 0.55,
@@ -72,7 +95,9 @@ export function PredictionSection() {
       projects: 1.2,
       promotions: 3.5,
       teamSize: 0.2,
-      salary: 0.001
+      salary: 0.001,
+      education: { 'High School': -5, "Associate's": 0, "Bachelor's": 5, "Master's": 10, 'PhD': 15 },
+      remote: { 'Never': -2, 'Rarely': 0, 'Hybrid': 3, 'Mostly': 2, 'Always': 1 }
     };
 
     let score = 25 +
@@ -85,29 +110,40 @@ export function PredictionSection() {
       projectsHandled[0] * weights.projects +
       promotions[0] * weights.promotions +
       teamSize[0] * weights.teamSize +
-      monthlySalary * weights.salary;
+      monthlySalary * weights.salary +
+      (weights.education[educationLevel as keyof typeof weights.education] || 0) +
+      (weights.remote[remoteWorkFrequency as keyof typeof weights.remote] || 0);
+
+    // Age factor - peak performance at 35-45
+    const ageFactor = age < 25 ? -3 : age > 55 ? -5 : age >= 35 && age <= 45 ? 5 : 0;
+    score += ageFactor;
 
     score = Math.min(100, Math.max(0, score));
-    const category = score < 60 ? 'Low' : score < 80 ? 'Medium' : 'High';
+    const category: 'Low' | 'Medium' | 'High' = score < 60 ? 'Low' : score < 80 ? 'Medium' : 'High';
     const confidence = 75 + Math.random() * 15;
+
+    const recommendations: string[] = [];
+    if (satisfactionScore[0] < 3) recommendations.push('Focus on improving employee satisfaction through engagement initiatives');
+    if (trainingHours[0] < 20) recommendations.push('Increase training hours to boost skill development');
+    if (overtimeHours[0] > 10) recommendations.push('Reduce overtime to prevent burnout and maintain productivity');
+    if (sickDays[0] > 10) recommendations.push('Implement wellness programs to reduce sick days');
+    if (promotions[0] === 0 && yearsAtCompany[0] > 3) recommendations.push('Consider career development opportunities');
+    if (score >= 80) recommendations.push('Maintain current excellent performance levels');
+    if (recommendations.length === 0) recommendations.push('Continue monitoring performance metrics regularly');
 
     return {
       score: Math.round(score),
       category,
       confidence,
       probabilities: {
-        low: category === 'Low' ? 0.6 : 0.15,
-        medium: category === 'Medium' ? 0.55 : 0.25,
-        high: category === 'High' ? 0.7 : 0.2,
+        low: category === 'Low' ? 0.6 + Math.random() * 0.2 : 0.1 + Math.random() * 0.1,
+        medium: category === 'Medium' ? 0.5 + Math.random() * 0.2 : 0.2 + Math.random() * 0.1,
+        high: category === 'High' ? 0.65 + Math.random() * 0.2 : 0.15 + Math.random() * 0.1,
       },
-      riskLevel: category,
-      recommendations: [
-        score < 70 ? 'Consider increasing training hours' : 'Maintain current training schedule',
-        satisfactionScore[0] < 3 ? 'Focus on improving employee satisfaction' : 'Good satisfaction levels',
-        overtimeHours[0] > 10 ? 'Reduce overtime to prevent burnout' : 'Overtime levels are acceptable',
-      ]
+      riskLevel: category === 'Low' ? 'High' : category === 'Medium' ? 'Medium' : 'Low' as 'Low' | 'Medium' | 'High',
+      recommendations
     };
-  };
+  }, [age, satisfactionScore, trainingHours, yearsAtCompany, workHoursPerWeek, overtimeHours, sickDays, projectsHandled, promotions, teamSize, monthlySalary, educationLevel, remoteWorkFrequency]);
 
   const handlePredict = async () => {
     setIsLoading(true);
@@ -185,15 +221,52 @@ export function PredictionSection() {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      {/* Input Form */}
-      <ChartCard 
-        title="Performance Prediction" 
-        subtitle="Enter employee metrics to predict performance"
-        delay={0}
-      >
-        <ScrollArea className="h-[600px] pr-4">
-          <div className="space-y-5">
+    <div className="space-y-6">
+      {/* Hero Banner */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/20 via-accent/10 to-transparent border border-primary/20 p-6 sm:p-8">
+        <div className="absolute inset-0 bg-grid-pattern opacity-5" />
+        <div className="absolute -top-24 -right-24 w-64 h-64 bg-primary/20 rounded-full blur-3xl" />
+        <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-accent/20 rounded-full blur-3xl" />
+        
+        <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center gap-6">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg shadow-primary/25">
+            <Sparkles className="w-8 h-8 sm:w-10 sm:h-10 text-primary-foreground" />
+          </div>
+          <div className="flex-1">
+            <h2 className="text-2xl sm:text-3xl font-bold mb-2">AI Performance Predictor</h2>
+            <p className="text-muted-foreground text-sm sm:text-base max-w-2xl">
+              Enter employee metrics below to predict performance using our ML models.
+              {apiStatus === 'offline' ? ' Currently using local simulation mode.' : ' Connected to ML backend.'}
+            </p>
+          </div>
+          <Badge 
+            variant="outline" 
+            className={cn(
+              "flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium",
+              apiStatus === 'online' 
+                ? "border-green-500/30 text-green-500 bg-green-500/10" 
+                : apiStatus === 'offline'
+                  ? "border-amber-500/30 text-amber-500 bg-amber-500/10"
+                  : "border-muted-foreground/30 text-muted-foreground"
+            )}
+          >
+            {apiStatus === 'checking' && <Loader2 className="w-3 h-3 animate-spin" />}
+            {apiStatus === 'online' && <Wifi className="w-3 h-3" />}
+            {apiStatus === 'offline' && <Zap className="w-3 h-3" />}
+            {apiStatus === 'checking' ? 'Checking...' : apiStatus === 'online' ? 'Live Mode' : 'Simulation Mode'}
+          </Badge>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Input Form */}
+        <ChartCard 
+          title="Employee Metrics" 
+          subtitle="Configure all 16 prediction factors"
+          delay={0}
+        >
+          <ScrollArea className="h-[600px] pr-4">
+            <div className="space-y-5">
             {/* Row 1: Age, Gender */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -441,41 +514,36 @@ export function PredictionSection() {
               />
             </div>
 
-            {/* API Status Indicator */}
-            <div className={cn(
-              "flex items-center gap-2 px-3 py-2 rounded-lg text-sm",
-              apiStatus === 'online' ? "bg-success/10 text-success" :
-              apiStatus === 'offline' ? "bg-destructive/10 text-destructive" :
-              "bg-muted/50 text-muted-foreground"
-            )}>
-              {apiStatus === 'checking' && <Loader2 className="w-4 h-4 animate-spin" />}
-              {apiStatus === 'online' && <Wifi className="w-4 h-4" />}
-              {apiStatus === 'offline' && <WifiOff className="w-4 h-4" />}
-              <span>
-                {apiStatus === 'checking' ? 'Checking API...' :
-                 apiStatus === 'online' ? 'ML Backend Online' :
-                 'ML Backend Offline'}
-              </span>
+            {/* Action Buttons */}
+            <div className="flex gap-3">
+              <Button 
+                variant="outline" 
+                onClick={resetFields}
+                className="flex-shrink-0"
+                disabled={isLoading}
+              >
+                <RotateCcw className="w-4 h-4 mr-2" />
+                Reset
+              </Button>
+              <Button 
+                onClick={handlePredict} 
+                className="flex-1"
+                variant="glow"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    {apiStatus === 'offline' ? 'Simulating...' : 'Predicting...'}
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4" />
+                    {apiStatus === 'offline' ? 'Run Simulation' : 'Predict Performance'}
+                  </span>
+                )}
+              </Button>
             </div>
-
-            <Button 
-              onClick={handlePredict} 
-              className="w-full"
-              variant="glow"
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <span className="flex items-center gap-2">
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  {apiStatus === 'offline' ? 'Simulating...' : 'Predicting...'}
-                </span>
-              ) : (
-                <span className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4" />
-                  {apiStatus === 'offline' ? 'Simulate Performance' : 'Predict Performance'}
-                </span>
-              )}
-            </Button>
           </div>
         </ScrollArea>
       </ChartCard>
@@ -574,15 +642,22 @@ export function PredictionSection() {
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center h-[400px] text-center">
-            <div className="w-20 h-20 rounded-full bg-secondary/50 flex items-center justify-center mb-4">
-              <Sparkles className="w-10 h-10 text-muted-foreground" />
+            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center mb-6 animate-pulse">
+              <Sparkles className="w-12 h-12 text-primary" />
             </div>
-            <p className="text-muted-foreground">
-              Adjust the parameters and click<br />"Predict Performance" to see results
+            <h3 className="text-xl font-bold mb-2">Ready to Predict</h3>
+            <p className="text-muted-foreground max-w-md">
+              Configure the employee metrics on the left and click 
+              "{apiStatus === 'offline' ? 'Run Simulation' : 'Predict Performance'}" to see AI-powered predictions.
             </p>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground mt-4">
+              <Zap className="w-4 h-4 text-primary" />
+              <span>{apiStatus === 'offline' ? 'Simulation Mode Active' : 'ML Backend Connected'}</span>
+            </div>
           </div>
         )}
-      </ChartCard>
+        </ChartCard>
+      </div>
     </div>
   );
 }
