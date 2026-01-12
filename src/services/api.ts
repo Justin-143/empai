@@ -1,4 +1,4 @@
-const API_BASE = "https://palaced-sharonda-thirtypenny.ngrok-free.dev";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "https://palaced-sharonda-thirtypenny.ngrok-free.dev";
 
 export async function predictPerformance(employeeData: any) {
   const res = await fetch(`${API_BASE}/api/predict`, {
