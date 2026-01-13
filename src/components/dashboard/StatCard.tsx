@@ -66,40 +66,43 @@ export function StatCard({ title, value, subtitle, icon: Icon, trend, variant = 
 
   return (
     <div 
-      className="stat-card animate-slide-up group"
+      className="stat-card animate-slide-up group shine"
       style={{ animationDelay: `${delay}ms` }}
     >
       <div className={cn(
-        "absolute inset-0 bg-gradient-to-br opacity-50 rounded-xl",
+        "absolute inset-0 bg-gradient-to-br opacity-50 rounded-xl transition-opacity duration-500 group-hover:opacity-80",
         variantStyles[variant]
       )} />
+      
+      {/* Animated corner accent */}
+      <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-bl from-primary/10 to-transparent rounded-bl-full opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
       
       <div className="relative z-10">
         <div className="flex items-start justify-between mb-3 sm:mb-4">
           <div className={cn(
-            "p-2 sm:p-3 rounded-lg sm:rounded-xl transition-transform duration-300 group-hover:scale-110",
+            "p-2.5 sm:p-3 rounded-xl transition-all duration-500 group-hover:scale-110 group-hover:rotate-3",
             iconStyles[variant]
           )}>
-            <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
+            <Icon className="w-5 h-5 sm:w-6 sm:h-6" />
           </div>
           {trend && (
             <div className={cn(
-              "flex items-center gap-1 text-xs sm:text-sm font-medium px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full",
+              "flex items-center gap-1 text-xs sm:text-sm font-medium px-2 sm:px-3 py-1 rounded-full transition-transform duration-300 group-hover:scale-105",
               trend.isPositive 
                 ? "bg-success/20 text-success" 
                 : "bg-destructive/20 text-destructive"
             )}>
-              <span>{trend.isPositive ? '↑' : '↓'}</span>
+              <span className="animate-bounce-subtle">{trend.isPositive ? '↑' : '↓'}</span>
               <span>{Math.abs(trend.value)}%</span>
             </div>
           )}
         </div>
         
-        <div className="space-y-0.5 sm:space-y-1">
-          <p className="text-xs sm:text-sm text-muted-foreground font-medium">{title}</p>
-          <p className="text-2xl sm:text-3xl font-bold tracking-tight font-mono">{formattedValue}</p>
+        <div className="space-y-1">
+          <p className="text-xs sm:text-sm text-muted-foreground font-medium uppercase tracking-wide">{title}</p>
+          <p className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight font-mono bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text">{formattedValue}</p>
           {subtitle && (
-            <p className="text-[10px] sm:text-xs text-muted-foreground line-clamp-1">{subtitle}</p>
+            <p className="text-[10px] sm:text-xs text-muted-foreground/80 line-clamp-1 pt-1">{subtitle}</p>
           )}
         </div>
       </div>

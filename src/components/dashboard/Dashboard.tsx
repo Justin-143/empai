@@ -82,12 +82,12 @@ export function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen flex w-full">
+    <div className="min-h-screen flex w-full particle-bg">
       {/* Mobile Menu Button */}
       <Button
         variant="ghost"
         size="icon"
-        className="fixed top-4 left-4 z-50 lg:hidden"
+        className="fixed top-4 left-4 z-50 lg:hidden hover:scale-110 transition-transform"
         onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
       >
         {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -96,7 +96,7 @@ export function Dashboard() {
       {/* Mobile Overlay */}
       {mobileMenuOpen && (
         <div 
-          className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40 lg:hidden"
+          className="fixed inset-0 bg-background/80 backdrop-blur-md z-40 lg:hidden animate-fade-in"
           onClick={() => setMobileMenuOpen(false)}
         />
       )}
@@ -110,26 +110,26 @@ export function Dashboard() {
       />
       
       <main className={cn(
-        "flex-1 transition-all duration-300",
+        "flex-1 transition-all duration-500",
         "ml-0 lg:ml-64"
       )}>
         {/* Header */}
-        <header className="sticky top-0 z-30 backdrop-blur-xl bg-background/80 border-b border-border">
+        <header className="sticky top-0 z-30 backdrop-blur-xl bg-background/70 border-b border-border/50">
           <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 ml-10 lg:ml-0">
-              <div>
-                <h1 className="text-xl sm:text-2xl font-bold">{currentSection.title}</h1>
+              <div className="animate-fade-in">
+                <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">{currentSection.title}</h1>
                 <p className="text-sm sm:text-base text-muted-foreground mt-1">{currentSection.subtitle}</p>
               </div>
               <Badge 
                 variant="outline" 
                 className={cn(
-                  "flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium",
+                  "flex items-center gap-2 px-4 py-2 text-xs font-medium transition-all duration-300 hover-lift",
                   backendOnline === null 
                     ? "border-muted-foreground/30 text-muted-foreground"
                     : backendOnline 
-                      ? "border-green-500/30 text-green-600 dark:text-green-400 bg-green-500/10" 
-                      : "border-destructive/30 text-destructive bg-destructive/10"
+                      ? "border-green-500/30 text-green-600 dark:text-green-400 bg-green-500/10 shadow-lg shadow-green-500/10" 
+                      : "border-destructive/30 text-destructive bg-destructive/10 shadow-lg shadow-destructive/10"
                 )}
               >
                 {backendOnline === null ? (
@@ -139,12 +139,16 @@ export function Dashboard() {
                   </>
                 ) : backendOnline ? (
                   <>
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                    </span>
                     <Wifi className="w-3 h-3" />
                     ML Backend Online
                   </>
                 ) : (
                   <>
-                    <WifiOff className="w-3 h-3" />
+                    <WifiOff className="w-3 h-3 animate-pulse" />
                     ML Backend Offline
                   </>
                 )}
@@ -154,7 +158,7 @@ export function Dashboard() {
         </header>
 
         {/* Content */}
-        <div className="p-4 sm:p-6 lg:p-8">
+        <div className="p-4 sm:p-6 lg:p-8 animate-fade-in" key={activeSection}>
           {renderSection()}
         </div>
       </main>
