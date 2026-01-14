@@ -1,30 +1,28 @@
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "https://palaced-sharonda-thirtypenny.ngrok-free.dev";
+import { supabase } from "@/integrations/supabase/client";
 
 export async function predictPerformance(employeeData: any) {
-  const res = await fetch(`${API_BASE}/api/predict`, {
-    method: "POST",
-    headers: { 
-      "Content-Type": "application/json",
-      "ngrok-skip-browser-warning": "true"
-    },
-    body: JSON.stringify(employeeData)
+  const { data, error } = await supabase.functions.invoke('predict-performance', {
+    body: employeeData
   });
-  if (!res.ok) {
-    const errorText = await res.text();
-    throw new Error(errorText || res.statusText);
+  
+  if (error) {
+    throw new Error(error.message || 'Prediction failed');
   }
-  return await res.json();
+  
+  return data;
 }
 
 export async function getFeatureImportance() {
-  const res = await fetch(`${API_BASE}/api/feature-importance`, {
-    headers: { "ngrok-skip-browser-warning": "true" }
+  const { data, error } = await supabase.functions.invoke('predict-performance', {
+    body: {},
+    method: 'GET'
   });
-  if (!res.ok) {
-    const errorText = await res.text();
-    throw new Error(errorText || res.statusText);
+  
+  if (error) {
+    throw new Error(error.message || 'Failed to get feature importance');
   }
-  return await res.json();
+  
+  return data;
 }
 
 export async function healthCheck() {
@@ -32,19 +30,17 @@ export async function healthCheck() {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000);
     
-    const res = await fetch(`${API_BASE}/api/health`, {
-      headers: { "ngrok-skip-browser-warning": "true" },
-      signal: controller.signal
+    const { data, error } = await supabase.functions.invoke('predict-performance', {
+      body: { action: 'health' }
     });
     
     clearTimeout(timeoutId);
     
-    if (!res.ok) {
-      return { online: false, error: `Server returned ${res.status}` };
+    if (error) {
+      return { online: false, error: error.message };
     }
     
-    const data = await res.json();
-    return { online: data.status === "healthy" };
+    return { online: data?.status === 'healthy' };
   } catch (error) {
     return { 
       online: false, 
