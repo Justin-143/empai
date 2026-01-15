@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { OverviewSection } from './OverviewSection';
 import { PredictionSection } from './PredictionSection';
@@ -11,11 +12,12 @@ import { WhatIfSection } from './WhatIfSection';
 import { ProductivitySection } from './ProductivitySection';
 import { SettingsPanel } from './SettingsPanel';
 import { DatasetUpload } from './DatasetUpload';
-import { Menu, X, Wifi, WifiOff } from 'lucide-react';
+import { Menu, X, Wifi, WifiOff, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { healthCheck } from '@/services/api';
 import { Badge } from '@/components/ui/badge';
+import { useAuth } from '@/hooks/useAuth';
 
 const sectionTitles: Record<string, { title: string; subtitle: string }> = {
   overview: { title: 'Dashboard Overview', subtitle: 'Employee performance insights at a glance' },
@@ -31,11 +33,18 @@ const sectionTitles: Record<string, { title: string; subtitle: string }> = {
 };
 
 export function Dashboard() {
+  const navigate = useNavigate();
+  const { signOut } = useAuth();
   const [activeSection, setActiveSection] = useState('overview');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [backendOnline, setBackendOnline] = useState<boolean | null>(null);
   const currentSection = sectionTitles[activeSection];
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
+  };
 
   // Check backend health on mount and periodically
   useEffect(() => {
@@ -121,38 +130,49 @@ export function Dashboard() {
                 <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">{currentSection.title}</h1>
                 <p className="text-sm sm:text-base text-muted-foreground mt-1">{currentSection.subtitle}</p>
               </div>
-              <Badge 
-                variant="outline" 
-                className={cn(
-                  "flex items-center gap-2 px-4 py-2 text-xs font-medium transition-all duration-300 hover-lift",
-                  backendOnline === null 
-                    ? "border-muted-foreground/30 text-muted-foreground"
-                    : backendOnline 
-                      ? "border-green-500/30 text-green-600 dark:text-green-400 bg-green-500/10 shadow-lg shadow-green-500/10" 
-                      : "border-destructive/30 text-destructive bg-destructive/10 shadow-lg shadow-destructive/10"
-                )}
-              >
-                {backendOnline === null ? (
-                  <>
-                    <span className="w-2 h-2 rounded-full bg-muted-foreground animate-pulse" />
-                    Checking...
-                  </>
-                ) : backendOnline ? (
-                  <>
-                    <span className="relative flex h-2 w-2">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                    </span>
-                    <Wifi className="w-3 h-3" />
-                    ML Backend Online
-                  </>
-                ) : (
-                  <>
-                    <WifiOff className="w-3 h-3 animate-pulse" />
-                    ML Backend Offline
-                  </>
-                )}
-              </Badge>
+              <div className="flex items-center gap-3">
+                <Badge 
+                  variant="outline" 
+                  className={cn(
+                    "flex items-center gap-2 px-4 py-2 text-xs font-medium transition-all duration-300 hover-lift",
+                    backendOnline === null 
+                      ? "border-muted-foreground/30 text-muted-foreground"
+                      : backendOnline 
+                        ? "border-green-500/30 text-green-600 dark:text-green-400 bg-green-500/10 shadow-lg shadow-green-500/10" 
+                        : "border-destructive/30 text-destructive bg-destructive/10 shadow-lg shadow-destructive/10"
+                  )}
+                >
+                  {backendOnline === null ? (
+                    <>
+                      <span className="w-2 h-2 rounded-full bg-muted-foreground animate-pulse" />
+                      Checking...
+                    </>
+                  ) : backendOnline ? (
+                    <>
+                      <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                      </span>
+                      <Wifi className="w-3 h-3" />
+                      ML Backend Online
+                    </>
+                  ) : (
+                    <>
+                      <WifiOff className="w-3 h-3 animate-pulse" />
+                      ML Backend Offline
+                    </>
+                  )}
+                </Badge>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={handleSignOut}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Sign Out
+                </Button>
+              </div>
             </div>
           </div>
         </header>
