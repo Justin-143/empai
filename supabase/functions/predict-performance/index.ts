@@ -1,30 +1,34 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-interface EmployeeData {
-  age: number;
-  gender: string;
-  department: string;
-  education: string;
-  jobTitle: string;
-  yearsAtCompany: number;
-  salary: number;
-  teamSize: number;
-  remote: string;
-  workHours: number;
-  projects: number;
-  overtime: number;
-  sickDays: number;
-  training: number;
-  promotions: number;
-  satisfaction: number;
-}
+// Input validation schema
+const EmployeeDataSchema = z.object({
+  age: z.number().int().min(18).max(100).optional().default(30),
+  gender: z.string().max(20).optional().default('Unknown'),
+  department: z.string().max(100).optional().default('Unknown'),
+  education: z.enum(['High School', "Associate's", "Bachelor's", "Master's", 'PhD']).optional().default("Bachelor's"),
+  jobTitle: z.string().max(100).optional().default('Employee'),
+  yearsAtCompany: z.number().int().min(0).max(50).optional().default(0),
+  salary: z.number().min(0).max(10000000).optional().default(5000),
+  teamSize: z.number().int().min(1).max(1000).optional().default(5),
+  remote: z.enum(['Never', 'Rarely', 'Hybrid', 'Mostly', 'Always']).optional().default('Hybrid'),
+  workHours: z.number().min(0).max(168).optional().default(40),
+  projects: z.number().int().min(0).max(100).optional().default(0),
+  overtime: z.number().min(0).max(100).optional().default(0),
+  sickDays: z.number().int().min(0).max(365).optional().default(0),
+  training: z.number().min(0).max(1000).optional().default(0),
+  promotions: z.number().int().min(0).max(20).optional().default(0),
+  satisfaction: z.number().min(1).max(5).optional().default(3),
+});
+
+type EmployeeData = z.infer<typeof EmployeeDataSchema>;
 
 function calculatePrediction(data: EmployeeData) {
   const weights = {
@@ -197,9 +201,26 @@ serve(async (req) => {
     // Prediction endpoint (POST)
     if (req.method === 'POST') {
       const body = await req.json();
-      console.log('Prediction requested with data:', JSON.stringify(body));
       
-      const result = calculatePrediction(body as EmployeeData);
+      // Validate input data
+      const validationResult = EmployeeDataSchema.safeParse(body);
+      if (!validationResult.success) {
+        console.error('Validation failed:', validationResult.error.errors);
+        return new Response(
+          JSON.stringify({ 
+            error: 'Invalid input data', 
+            details: validationResult.error.errors.map(e => ({
+              field: e.path.join('.'),
+              message: e.message
+            }))
+          }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      console.log('Prediction requested with validated data:', JSON.stringify(validationResult.data));
+      
+      const result = calculatePrediction(validationResult.data);
       console.log('Prediction result:', JSON.stringify(result));
       
       return new Response(
