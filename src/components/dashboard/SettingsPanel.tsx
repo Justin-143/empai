@@ -1,13 +1,17 @@
 import { useState, useEffect } from 'react';
-import { X, Bell, Moon, Sun, Globe, Shield, Database, Palette, Monitor, Smartphone, Tablet, Check } from 'lucide-react';
+import { X, Bell, Moon, Sun, Globe, Shield, Database, Palette, Monitor, Smartphone, Tablet, Check, Loader2, User, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Separator } from '@/components/ui/separator';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
+import { z } from 'zod';
 
 interface SettingsPanelProps {
   isOpen: boolean;
@@ -28,8 +32,35 @@ const defaultSettings = {
   compactView: false,
 };
 
+// Password validation schema
+const passwordSchema = z.string()
+  .min(8, 'Password must be at least 8 characters')
+  .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+  .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
+  .regex(/[0-9]/, 'Password must contain at least one number');
+
+const displayNameSchema = z.string()
+  .min(2, 'Display name must be at least 2 characters')
+  .max(50, 'Display name must be less than 50 characters');
+
 export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
   const { toast } = useToast();
+  const { user, updatePassword, updateProfile } = useAuth();
+  
+  // Dialog states
+  const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
+  const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false);
+  const [isClearDataDialogOpen, setIsClearDataDialogOpen] = useState(false);
+  
+  // Form states
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [displayName, setDisplayName] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
+  
   const [settings, setSettings] = useState(() => {
     const saved = localStorage.getItem('dashboard-settings');
     if (saved) {
@@ -41,6 +72,15 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
     }
     return defaultSettings;
   });
+
+  // Initialize display name from user
+  useEffect(() => {
+    if (user?.user_metadata?.display_name) {
+      setDisplayName(user.user_metadata.display_name);
+    } else if (user?.email) {
+      setDisplayName(user.email.split('@')[0]);
+    }
+  }, [user]);
 
   // Apply dark mode on mount and when it changes
   useEffect(() => {
@@ -97,23 +137,103 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
     });
   };
 
-  const handleChangePassword = () => {
-    toast({
-      title: "Change Password",
-      description: "Password change functionality requires authentication backend.",
-    });
+  const handleChangePassword = async () => {
+    // Validate password
+    const validationResult = passwordSchema.safeParse(newPassword);
+    if (!validationResult.success) {
+      setPasswordErrors(validationResult.error.errors.map(e => e.message));
+      return;
+    }
+    
+    if (newPassword !== confirmPassword) {
+      setPasswordErrors(['Passwords do not match']);
+      return;
+    }
+    
+    setPasswordErrors([]);
+    setIsSubmitting(true);
+    
+    try {
+      const { error } = await updatePassword(newPassword);
+      
+      if (error) {
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Password Updated",
+          description: "Your password has been changed successfully.",
+        });
+        setIsPasswordDialogOpen(false);
+        setNewPassword('');
+        setConfirmPassword('');
+      }
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "Failed to update password. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleUpdateProfile = async () => {
+    // Validate display name
+    const validationResult = displayNameSchema.safeParse(displayName);
+    if (!validationResult.success) {
+      toast({
+        title: "Validation Error",
+        description: validationResult.error.errors[0].message,
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
+    try {
+      const { error } = await updateProfile({ displayName });
+      
+      if (error) {
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Profile Updated",
+          description: "Your display name has been updated successfully.",
+        });
+        setIsProfileDialogOpen(false);
+      }
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "Failed to update profile. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleTwoFactor = () => {
     toast({
       title: "Two-Factor Authentication",
-      description: "2FA setup requires authentication backend.",
+      description: "2FA is managed through your authentication provider. This feature will be available in a future update.",
     });
   };
 
   const handleClearData = () => {
     localStorage.removeItem('dashboard-settings');
     setSettings(defaultSettings);
+    setIsClearDataDialogOpen(false);
     toast({
       title: "Data Cleared",
       description: "All settings have been reset to defaults.",
@@ -148,6 +268,27 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
         </div>
 
         <div className="p-4 sm:p-6 space-y-6 sm:space-y-8">
+          {/* Profile Section */}
+          <section>
+            <h3 className="flex items-center gap-2 text-sm font-semibold text-muted-foreground mb-3 sm:mb-4">
+              <User className="w-4 h-4" />
+              Profile
+            </h3>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
+                <div>
+                  <p className="text-sm font-medium">{user?.user_metadata?.display_name || user?.email?.split('@')[0] || 'User'}</p>
+                  <p className="text-xs text-muted-foreground">{user?.email}</p>
+                </div>
+                <Button variant="outline" size="sm" onClick={() => setIsProfileDialogOpen(true)}>
+                  Edit
+                </Button>
+              </div>
+            </div>
+          </section>
+
+          <Separator />
+
           {/* Notifications */}
           <section>
             <h3 className="flex items-center gap-2 text-sm font-semibold text-muted-foreground mb-3 sm:mb-4">
@@ -232,6 +373,13 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
                   <Slider
                     value={[settings.refreshInterval]}
                     onValueChange={([v]) => setSettings(prev => ({ ...prev, refreshInterval: v }))}
+                    onValueCommit={([v]) => {
+                      toast({
+                        title: "Setting Updated",
+                        description: `Refresh Interval set to ${v} seconds.`,
+                        duration: 2000,
+                      });
+                    }}
                     min={10}
                     max={120}
                     step={10}
@@ -267,6 +415,13 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
                 <Slider
                   value={[settings.predictionThreshold * 100]}
                   onValueChange={([v]) => setSettings(prev => ({ ...prev, predictionThreshold: v / 100 }))}
+                  onValueCommit={([v]) => {
+                    toast({
+                      title: "Setting Updated",
+                      description: `Prediction Confidence Threshold set to ${v}%.`,
+                      duration: 2000,
+                    });
+                  }}
                   min={50}
                   max={95}
                   step={5}
@@ -333,7 +488,7 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
               Security
             </h3>
             <div className="space-y-3">
-              <Button variant="outline" className="w-full justify-start text-sm" onClick={handleChangePassword}>
+              <Button variant="outline" className="w-full justify-start text-sm" onClick={() => setIsPasswordDialogOpen(true)}>
                 Change Password
               </Button>
               <Button variant="outline" className="w-full justify-start text-sm" onClick={handleTwoFactor}>
@@ -342,7 +497,7 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
               <Button 
                 variant="outline" 
                 className="w-full justify-start text-sm text-destructive hover:text-destructive"
-                onClick={handleClearData}
+                onClick={() => setIsClearDataDialogOpen(true)}
               >
                 Clear All Data
               </Button>
@@ -377,6 +532,141 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
           </div>
         </div>
       </div>
+
+      {/* Change Password Dialog */}
+      <Dialog open={isPasswordDialogOpen} onOpenChange={setIsPasswordDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Change Password</DialogTitle>
+            <DialogDescription>
+              Enter a new password for your account. Password must be at least 8 characters with uppercase, lowercase, and numbers.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="newPassword">New Password</Label>
+              <div className="relative">
+                <Input
+                  id="newPassword"
+                  type={showPassword ? 'text' : 'password'}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Enter new password"
+                  className="pr-10"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Confirm Password</Label>
+              <div className="relative">
+                <Input
+                  id="confirmPassword"
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Confirm new password"
+                  className="pr-10"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                >
+                  {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+              </div>
+            </div>
+            {passwordErrors.length > 0 && (
+              <div className="text-sm text-destructive space-y-1">
+                {passwordErrors.map((error, i) => (
+                  <p key={i}>• {error}</p>
+                ))}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsPasswordDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleChangePassword} disabled={isSubmitting}>
+              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Update Password
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Profile Dialog */}
+      <Dialog open={isProfileDialogOpen} onOpenChange={setIsProfileDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Profile</DialogTitle>
+            <DialogDescription>
+              Update your display name and profile information.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="displayName">Display Name</Label>
+              <Input
+                id="displayName"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                placeholder="Enter display name"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Email</Label>
+              <Input
+                value={user?.email || ''}
+                disabled
+                className="bg-muted"
+              />
+              <p className="text-xs text-muted-foreground">Email cannot be changed</p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsProfileDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleUpdateProfile} disabled={isSubmitting}>
+              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Clear Data Confirmation Dialog */}
+      <Dialog open={isClearDataDialogOpen} onOpenChange={setIsClearDataDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Clear All Data</DialogTitle>
+            <DialogDescription>
+              This will reset all your settings to their default values. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsClearDataDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleClearData}>
+              Clear All Data
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
