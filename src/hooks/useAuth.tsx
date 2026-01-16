@@ -9,6 +9,9 @@ interface AuthContextType {
   signUp: (email: string, password: string, displayName?: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
+  updatePassword: (newPassword: string) => Promise<{ error: Error | null }>;
+  updateProfile: (data: { displayName?: string; avatarUrl?: string }) => Promise<{ error: Error | null }>;
+  sendPasswordResetEmail: (email: string) => Promise<{ error: Error | null }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -68,8 +71,64 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut();
   };
 
+  const updatePassword = async (newPassword: string) => {
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword
+    });
+    return { error: error as Error | null };
+  };
+
+  const updateProfile = async (data: { displayName?: string; avatarUrl?: string }) => {
+    // Update auth user metadata
+    const { error: authError } = await supabase.auth.updateUser({
+      data: {
+        display_name: data.displayName,
+        avatar_url: data.avatarUrl
+      }
+    });
+
+    if (authError) {
+      return { error: authError as Error | null };
+    }
+
+    // Also update the profiles table if user exists
+    if (user) {
+      const updateData: { display_name?: string; avatar_url?: string } = {};
+      if (data.displayName) updateData.display_name = data.displayName;
+      if (data.avatarUrl) updateData.avatar_url = data.avatarUrl;
+
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update(updateData)
+        .eq('id', user.id);
+
+      if (profileError) {
+        return { error: profileError as Error | null };
+      }
+    }
+
+    return { error: null };
+  };
+
+  const sendPasswordResetEmail = async (email: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth?mode=reset`
+    });
+    return { error: error as Error | null };
+  };
+
   return (
-    <AuthContext.Provider value={{ user, session, loading, signUp, signIn, signOut }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      session, 
+      loading, 
+      signUp, 
+      signIn, 
+      signOut,
+      updatePassword,
+      updateProfile,
+      sendPasswordResetEmail
+    }}>
       {children}
     </AuthContext.Provider>
   );
