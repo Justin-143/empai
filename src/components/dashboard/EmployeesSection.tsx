@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { employees as mockEmployees, Employee } from '@/data/mockData';
 import { ChartCard } from './ChartCard';
 import { Input } from '@/components/ui/input';
@@ -9,6 +9,7 @@ import { Search, Filter, ChevronUp, ChevronDown, Download, ChevronLeft, ChevronR
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useDataset } from '@/contexts/DatasetContext';
+import { useFilters } from '@/contexts/FilterContext';
 
 type SortField = 'name' | 'performanceScore' | 'satisfactionScore' | 'department';
 type SortDirection = 'asc' | 'desc';
@@ -23,9 +24,24 @@ export function EmployeesSection() {
   const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
   const { employees: uploadedEmployees, hasUploadedData } = useDataset();
+  const { selectedDepartments } = useFilters();
 
   // Use uploaded data if available, otherwise use mock data
-  const employees: Employee[] = hasUploadedData ? uploadedEmployees : mockEmployees;
+  const allEmployees: Employee[] = hasUploadedData ? uploadedEmployees : mockEmployees;
+  
+  // Apply global department filter first
+  const employees = useMemo(() => {
+    if (selectedDepartments.length === 0) return allEmployees;
+    return allEmployees.filter(e => selectedDepartments.includes(e.department));
+  }, [allEmployees, selectedDepartments]);
+
+  // Sync local department filter with global filter
+  useEffect(() => {
+    if (selectedDepartments.length > 0 && departmentFilter !== 'all') {
+      // If global filter is active, reset local filter
+      setDepartmentFilter('all');
+    }
+  }, [selectedDepartments]);
 
   const departments = ['all', ...new Set(employees.map(e => e.department))];
 

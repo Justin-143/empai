@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { Users, Brain, Target, Clock, Database } from 'lucide-react';
 import { StatCard } from './StatCard';
 import { ChartCard } from './ChartCard';
@@ -13,6 +14,7 @@ import {
 } from '@/data/mockData';
 import { AnimatedNumber } from '@/components/ui/animated-number';
 import { useDataset } from '@/contexts/DatasetContext';
+import { useFilters } from '@/contexts/FilterContext';
 
 const COLORS = ['hsl(187, 85%, 53%)', 'hsl(260, 65%, 60%)', 'hsl(142, 76%, 45%)', 'hsl(38, 92%, 50%)', 'hsl(0, 72%, 51%)'];
 
@@ -22,11 +24,19 @@ export function OverviewSection() {
     datasetName, 
     isAnalyzing, 
     hasUploadedData,
-    employees,
+    employees: allEmployees,
     departmentStats: uploadedDeptStats,
     featureImportance: uploadedFeatureImportance,
     performanceDistribution: uploadedPerfDist
   } = useDataset();
+  
+  const { selectedDepartments } = useFilters();
+
+  // Filter employees by selected departments
+  const employees = useMemo(() => {
+    if (selectedDepartments.length === 0) return allEmployees;
+    return allEmployees.filter(e => selectedDepartments.includes(e.department));
+  }, [allEmployees, selectedDepartments]);
 
   // Use uploaded data if available, otherwise use mock data
   const hasData = hasUploadedData || !!analysis;
@@ -47,19 +57,28 @@ export function OverviewSection() {
     ? [...new Set(employees.map(e => e.department))]
     : (analysis?.summary.departments ?? ['Engineering', 'Sales', 'HR', 'Marketing', 'Finance']);
 
-  const deptStats = hasUploadedData 
-    ? uploadedDeptStats.map(d => ({
-        department: d.department,
-        avgPerformance: d.avgPerformance,
-        employeeCount: d.employeeCount
-      }))
-    : (analysis 
-        ? analysis.department_stats.map(d => ({
-            department: d.department,
-            avgPerformance: d.avg_performance,
-            employeeCount: d.count
-          }))
-        : mockDeptStats);
+  // Filter department stats by selected departments
+  const deptStats = useMemo(() => {
+    let stats = hasUploadedData 
+      ? uploadedDeptStats.map(d => ({
+          department: d.department,
+          avgPerformance: d.avgPerformance,
+          employeeCount: d.employeeCount
+        }))
+      : (analysis 
+          ? analysis.department_stats.map(d => ({
+              department: d.department,
+              avgPerformance: d.avg_performance,
+              employeeCount: d.count
+            }))
+          : mockDeptStats);
+    
+    // Apply department filter
+    if (selectedDepartments.length > 0) {
+      stats = stats.filter(d => selectedDepartments.includes(d.department));
+    }
+    return stats;
+  }, [hasUploadedData, uploadedDeptStats, analysis, selectedDepartments]);
 
   const perfDistribution = hasUploadedData 
     ? uploadedPerfDist 

@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { ChartCard } from './ChartCard';
 import { departmentStats as mockDeptStats } from '@/data/mockData';
 import { 
@@ -7,6 +8,7 @@ import {
 import { cn } from '@/lib/utils';
 import { Users, TrendingUp, Clock, Star } from 'lucide-react';
 import { useDataset } from '@/contexts/DatasetContext';
+import { useFilters } from '@/contexts/FilterContext';
 
 const COLORS = [
   'hsl(187, 85%, 53%)', 
@@ -19,9 +21,16 @@ const COLORS = [
 
 export function DepartmentsSection() {
   const { departmentStats: uploadedDeptStats, hasUploadedData } = useDataset();
+  const { selectedDepartments } = useFilters();
   
   // Use uploaded data if available, otherwise use mock data
-  const departmentStats = hasUploadedData ? uploadedDeptStats : mockDeptStats;
+  const allDepartmentStats = hasUploadedData ? uploadedDeptStats : mockDeptStats;
+  
+  // Apply global department filter
+  const departmentStats = useMemo(() => {
+    if (selectedDepartments.length === 0) return allDepartmentStats;
+    return allDepartmentStats.filter(d => selectedDepartments.includes(d.department));
+  }, [allDepartmentStats, selectedDepartments]);
 
   const pieData = departmentStats.map(d => ({
     name: d.department,
