@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { useDataset } from '@/contexts/DatasetContext';
+import { useFilters } from '@/contexts/FilterContext';
 
 interface PredictionResult {
   score: number;
@@ -27,7 +28,14 @@ interface PredictionResult {
 }
 
 export function PredictionSection() {
-  const { employees, hasUploadedData, datasetName } = useDataset();
+  const { employees: allEmployees, hasUploadedData, datasetName } = useDataset();
+  const { selectedDepartments } = useFilters();
+  
+  // Filter employees by selected departments
+  const employees = useMemo(() => {
+    if (selectedDepartments.length === 0) return allEmployees;
+    return allEmployees.filter(e => selectedDepartments.includes(e.department));
+  }, [allEmployees, selectedDepartments]);
   
   // Employee selection state (for uploaded data mode)
   const [selectedEmployeeIndex, setSelectedEmployeeIndex] = useState(0);

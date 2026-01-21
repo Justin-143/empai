@@ -12,6 +12,7 @@ import { WhatIfSection } from './WhatIfSection';
 import { ProductivitySection } from './ProductivitySection';
 import { SettingsPanel } from './SettingsPanel';
 import { DatasetUpload } from './DatasetUpload';
+import { DepartmentFilter } from './DepartmentFilter';
 import { Menu, X, Wifi, WifiOff, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -131,6 +132,7 @@ export function Dashboard() {
                 <p className="text-sm sm:text-base text-muted-foreground mt-1">{currentSection.subtitle}</p>
               </div>
               <div className="flex items-center gap-3">
+                <DepartmentFilter />
                 <Badge 
                   variant="outline" 
                   className={cn(

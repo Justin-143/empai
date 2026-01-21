@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { ChartCard } from './ChartCard';
 import { StatCard } from './StatCard';
 import { 
@@ -9,8 +9,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { TrendingUp, Clock, Target, Activity, Users, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { departmentStats, employees, performanceTrends } from '@/data/mockData';
+import { departmentStats as mockDeptStats, employees as mockEmployees, performanceTrends } from '@/data/mockData';
 import { AnimatedNumber } from '@/components/ui/animated-number';
+import { useDataset } from '@/contexts/DatasetContext';
+import { useFilters } from '@/contexts/FilterContext';
 
 // Extended productivity data
 const weeklyProductivity = [
@@ -37,25 +39,42 @@ const hourlyProductivity = [
   { hour: '5PM', productivity: 58, focus: 55 },
 ];
 
-const teamComparison = departmentStats.map(dept => ({
-  team: dept.department,
-  productivity: Math.round(dept.avgPerformance + Math.random() * 10 - 5),
-  engagement: Math.round(dept.avgSatisfaction * 20 + Math.random() * 10),
-  efficiency: Math.round(75 + Math.random() * 20),
-  size: dept.employeeCount
-}));
-
-const employeeScatter = employees.map(emp => ({
-  name: emp.name,
-  hours: emp.workHoursPerWeek + emp.overtimeHours,
-  performance: emp.performanceScore,
-  satisfaction: emp.satisfactionScore,
-  department: emp.department
-}));
-
 export function ProductivitySection() {
   const [timeRange, setTimeRange] = useState('8weeks');
   const [selectedTeam, setSelectedTeam] = useState('All');
+  const { employees: uploadedEmployees, departmentStats: uploadedDeptStats, hasUploadedData } = useDataset();
+  const { selectedDepartments } = useFilters();
+
+  // Use uploaded data if available, otherwise use mock data
+  const allEmployees = hasUploadedData ? uploadedEmployees : mockEmployees;
+  const allDepartmentStats = hasUploadedData ? uploadedDeptStats : mockDeptStats;
+  
+  // Apply global department filter
+  const employees = useMemo(() => {
+    if (selectedDepartments.length === 0) return allEmployees;
+    return allEmployees.filter(e => selectedDepartments.includes(e.department));
+  }, [allEmployees, selectedDepartments]);
+
+  const departmentStats = useMemo(() => {
+    if (selectedDepartments.length === 0) return allDepartmentStats;
+    return allDepartmentStats.filter(d => selectedDepartments.includes(d.department));
+  }, [allDepartmentStats, selectedDepartments]);
+
+  const teamComparison = useMemo(() => departmentStats.map(dept => ({
+    team: dept.department,
+    productivity: Math.round(dept.avgPerformance + Math.random() * 10 - 5),
+    engagement: Math.round(dept.avgSatisfaction * 20 + Math.random() * 10),
+    efficiency: Math.round(75 + Math.random() * 20),
+    size: dept.employeeCount
+  })), [departmentStats]);
+
+  const employeeScatter = useMemo(() => employees.map(emp => ({
+    name: emp.name,
+    hours: emp.workHoursPerWeek + emp.overtimeHours,
+    performance: emp.performanceScore,
+    satisfaction: emp.satisfactionScore,
+    department: emp.department
+  })), [employees]);
 
   const filteredScatter = selectedTeam === 'All' 
     ? employeeScatter 
