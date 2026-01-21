@@ -343,15 +343,6 @@ export function OverviewSection() {
         </ChartCard>
       </div>
 
-      {/* Sample Data Notice */}
-      {!hasData && !isAnalyzing && (
-        <div className="bg-muted/20 border border-dashed border-border rounded-xl p-4 sm:p-6 text-center">
-          <Database className="w-8 h-8 sm:w-10 sm:h-10 mx-auto mb-2 sm:mb-3 text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">
-            Showing sample data. Upload a dataset from the sidebar to see your own insights.
-          </p>
-        </div>
-      )}
     </div>
   );
 }

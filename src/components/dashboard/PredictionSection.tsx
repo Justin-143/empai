@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Sparkles, AlertCircle, CheckCircle2, AlertTriangle, Loader2, Wifi, WifiOff, RotateCcw, Zap } from 'lucide-react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { Sparkles, AlertCircle, CheckCircle2, AlertTriangle, Loader2, Wifi, WifiOff, RotateCcw, Zap, Users, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ChartCard } from './ChartCard';
 import { Label } from '@/components/ui/label';
@@ -11,6 +11,7 @@ import { predictPerformance, healthCheck } from '@/services/api';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
+import { useDataset } from '@/contexts/DatasetContext';
 
 interface PredictionResult {
   score: number;
@@ -26,6 +27,12 @@ interface PredictionResult {
 }
 
 export function PredictionSection() {
+  const { employees, hasUploadedData, datasetName } = useDataset();
+  
+  // Employee selection state (for uploaded data mode)
+  const [selectedEmployeeIndex, setSelectedEmployeeIndex] = useState(0);
+  const [isAutoMode, setIsAutoMode] = useState(true);
+  
   // All dataset features
   const [age, setAge] = useState(30);
   const [gender, setGender] = useState('Male');
@@ -49,6 +56,52 @@ export function PredictionSection() {
   const [error, setError] = useState<string | null>(null);
   const [apiStatus, setApiStatus] = useState<'checking' | 'online' | 'offline'>('checking');
   const { toast } = useToast();
+
+  // Get current employee when in auto mode with uploaded data
+  const currentEmployee = useMemo(() => {
+    if (hasUploadedData && employees.length > 0 && isAutoMode) {
+      return employees[selectedEmployeeIndex];
+    }
+    return null;
+  }, [hasUploadedData, employees, selectedEmployeeIndex, isAutoMode]);
+
+  // Auto-populate fields when employee changes
+  useEffect(() => {
+    if (currentEmployee) {
+      // Use available Employee fields, defaults for others
+      setAge(30); // Default - not in Employee interface
+      setGender('Male'); // Default - not in Employee interface
+      setDepartment(currentEmployee.department || 'Engineering');
+      setEducationLevel("Bachelor's"); // Default - not in Employee interface
+      setYearsAtCompany([currentEmployee.yearsAtCompany || 5]);
+      setMonthlySalary(5000); // Default - not in Employee interface
+      setWorkHoursPerWeek([currentEmployee.workHoursPerWeek || 40]);
+      setProjectsHandled([5]); // Default - not in Employee interface
+      setOvertimeHours([currentEmployee.overtimeHours || 5]);
+      setSickDays([currentEmployee.sickDays || 3]);
+      setRemoteWorkFrequency('Hybrid'); // Default - not in Employee interface
+      setTeamSize([8]); // Default - not in Employee interface
+      setTrainingHours([currentEmployee.trainingHours || 20]);
+      setPromotions([1]); // Default - not in Employee interface
+      setSatisfactionScore([currentEmployee.satisfactionScore || 3.5]);
+      setJobTitle('Software Engineer'); // Default - not in Employee interface
+      setPrediction(null);
+    }
+  }, [currentEmployee]);
+
+  // Navigate to next employee
+  const nextEmployee = useCallback(() => {
+    if (employees.length > 0) {
+      setSelectedEmployeeIndex((prev) => (prev + 1) % employees.length);
+    }
+  }, [employees.length]);
+
+  // Navigate to previous employee
+  const prevEmployee = useCallback(() => {
+    if (employees.length > 0) {
+      setSelectedEmployeeIndex((prev) => (prev - 1 + employees.length) % employees.length);
+    }
+  }, [employees.length]);
 
   // Health check on mount
   useEffect(() => {
@@ -235,28 +288,75 @@ export function PredictionSection() {
           <div className="flex-1">
             <h2 className="text-2xl sm:text-3xl font-bold mb-2">AI Performance Predictor</h2>
             <p className="text-muted-foreground text-sm sm:text-base max-w-2xl">
-              Enter employee metrics below to predict performance using our ML models.
+              {hasUploadedData && isAutoMode 
+                ? `Analyzing employees from "${datasetName}". Navigate through employees to see predictions.`
+                : 'Enter employee metrics below to predict performance using our ML models.'}
               {apiStatus === 'offline' ? ' Currently using local simulation mode.' : ' Connected to ML backend.'}
             </p>
           </div>
-          <Badge 
-            variant="outline" 
-            className={cn(
-              "flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium",
-              apiStatus === 'online' 
-                ? "border-green-500/30 text-green-500 bg-green-500/10" 
-                : apiStatus === 'offline'
-                  ? "border-amber-500/30 text-amber-500 bg-amber-500/10"
-                  : "border-muted-foreground/30 text-muted-foreground"
+          <div className="flex items-center gap-2">
+            {hasUploadedData && (
+              <Badge 
+                variant="outline" 
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border-primary/30 text-primary bg-primary/10 cursor-pointer"
+                onClick={() => setIsAutoMode(!isAutoMode)}
+              >
+                <Users className="w-3 h-3" />
+                {isAutoMode ? 'Auto Mode' : 'Manual Mode'}
+              </Badge>
             )}
-          >
-            {apiStatus === 'checking' && <Loader2 className="w-3 h-3 animate-spin" />}
-            {apiStatus === 'online' && <Wifi className="w-3 h-3" />}
-            {apiStatus === 'offline' && <Zap className="w-3 h-3" />}
-            {apiStatus === 'checking' ? 'Checking...' : apiStatus === 'online' ? 'Live Mode' : 'Simulation Mode'}
-          </Badge>
+            <Badge 
+              variant="outline" 
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium",
+                apiStatus === 'online' 
+                  ? "border-green-500/30 text-green-500 bg-green-500/10" 
+                  : apiStatus === 'offline'
+                    ? "border-amber-500/30 text-amber-500 bg-amber-500/10"
+                    : "border-muted-foreground/30 text-muted-foreground"
+              )}
+            >
+              {apiStatus === 'checking' && <Loader2 className="w-3 h-3 animate-spin" />}
+              {apiStatus === 'online' && <Wifi className="w-3 h-3" />}
+              {apiStatus === 'offline' && <Zap className="w-3 h-3" />}
+              {apiStatus === 'checking' ? 'Checking...' : apiStatus === 'online' ? 'Live Mode' : 'Simulation Mode'}
+            </Badge>
+          </div>
         </div>
       </div>
+
+      {/* Employee Navigator (shown when uploaded data and auto mode) */}
+      {hasUploadedData && isAutoMode && employees.length > 0 && (
+        <div className="bg-card border border-border rounded-xl p-4 flex items-center justify-between gap-4">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={prevEmployee}
+            disabled={employees.length <= 1}
+          >
+            <ChevronLeft className="w-4 h-4 mr-1" />
+            Previous
+          </Button>
+          <div className="flex-1 text-center">
+            <p className="text-sm text-muted-foreground">Employee</p>
+            <p className="text-lg font-semibold">
+              {currentEmployee?.name || `#${selectedEmployeeIndex + 1}`}
+              <span className="text-sm font-normal text-muted-foreground ml-2">
+                ({selectedEmployeeIndex + 1} of {employees.length})
+              </span>
+            </p>
+          </div>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={nextEmployee}
+            disabled={employees.length <= 1}
+          >
+            Next
+            <ChevronRight className="w-4 h-4 ml-1" />
+          </Button>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Input Form */}
