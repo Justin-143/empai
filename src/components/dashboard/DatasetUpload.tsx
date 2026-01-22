@@ -40,21 +40,52 @@ export function DatasetUpload() {
     return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
   };
 
+  // Properly parse CSV values, handling quoted fields with commas
+  const parseCSVLine = (line: string): string[] => {
+    const values: string[] = [];
+    let current = '';
+    let inQuotes = false;
+    
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      
+      if (char === '"') {
+        if (inQuotes && line[i + 1] === '"') {
+          // Escaped quote
+          current += '"';
+          i++;
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (char === ',' && !inQuotes) {
+        values.push(current.trim());
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+    values.push(current.trim());
+    return values;
+  };
+
   const parseCSV = (text: string): Record<string, any>[] => {
-    const lines = text.trim().split('\n');
+    const lines = text.trim().split(/\r?\n/);
     if (lines.length < 2) return [];
     
-    const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+    const headers = parseCSVLine(lines[0]).map(h => h.replace(/^"|"$/g, ''));
     const data: Record<string, any>[] = [];
     
     for (let i = 1; i < lines.length; i++) {
-      const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
+      const line = lines[i].trim();
+      if (!line) continue;
+      
+      const values = parseCSVLine(line);
       if (values.length === headers.length) {
         const row: Record<string, any> = {};
         headers.forEach((header, idx) => {
-          const value = values[idx];
+          const value = values[idx].replace(/^"|"$/g, '');
           const numValue = parseFloat(value);
-          row[header] = isNaN(numValue) ? value : numValue;
+          row[header] = isNaN(numValue) || value === '' ? value : numValue;
         });
         data.push(row);
       }
@@ -172,12 +203,18 @@ export function DatasetUpload() {
     setIsDragging(false);
     
     const file = e.dataTransfer.files[0];
-    if (file && (file.name.endsWith('.csv') || file.name.endsWith('.xlsx') || file.name.endsWith('.json'))) {
+    if (file && (file.name.endsWith('.csv') || file.name.endsWith('.json'))) {
       processFile(file);
+    } else if (file && file.name.endsWith('.xlsx')) {
+      toast({
+        title: "XLSX Not Supported",
+        description: "Please convert your Excel file to CSV format first",
+        variant: "destructive",
+      });
     } else {
       toast({
         title: "Invalid File Type",
-        description: "Please upload a CSV, XLSX, or JSON file",
+        description: "Please upload a CSV or JSON file",
         variant: "destructive",
       });
     }
@@ -200,11 +237,20 @@ export function DatasetUpload() {
     }
   };
 
+  const escapeCSVValue = (value: any): string => {
+    const str = String(value ?? '');
+    // If value contains comma, quote, or newline, wrap in quotes and escape inner quotes
+    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+      return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
+  };
+
   const exportToCSV = () => {
     if (previewData.length === 0) return;
     
-    const headers = Object.keys(previewData[0]).join(',');
-    const rows = previewData.map(row => Object.values(row).join(','));
+    const headers = Object.keys(previewData[0]).map(escapeCSVValue).join(',');
+    const rows = previewData.map(row => Object.values(row).map(escapeCSVValue).join(','));
     const csvContent = [headers, ...rows].join('\n');
     
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -277,7 +323,7 @@ export function DatasetUpload() {
             <input
               ref={fileInputRef}
               type="file"
-              accept=".csv,.xlsx,.json"
+              accept=".csv,.json"
               onChange={handleFileSelect}
               className="hidden"
             />
@@ -291,7 +337,7 @@ export function DatasetUpload() {
               {isDragging ? "Drop your file here" : "Drag & drop or click to upload"}
             </p>
             <p className="text-sm text-muted-foreground">
-              Supports CSV, XLSX, and JSON files up to 50MB
+              Supports CSV and JSON files up to 50MB
             </p>
             <div className="mt-4 flex items-center justify-center gap-2 text-sm text-muted-foreground">
               <BarChart3 className="w-4 h-4" />

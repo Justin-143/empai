@@ -46,11 +46,15 @@ export function OverviewSection() {
     : (analysis?.summary.total_employees ?? 398);
   
   const avgPerformance = hasUploadedData 
-    ? (employees.reduce((sum, e) => sum + e.performanceScore, 0) / employees.length || 0)
+    ? (employees.length > 0 
+        ? employees.reduce((sum, e) => sum + e.performanceScore, 0) / employees.length 
+        : 0)
     : (analysis?.summary.avg_performance ?? 82.34);
   
   const avgSatisfaction = hasUploadedData 
-    ? (employees.reduce((sum, e) => sum + e.satisfactionScore, 0) / employees.length || 0)
+    ? (employees.length > 0 
+        ? employees.reduce((sum, e) => sum + e.satisfactionScore, 0) / employees.length 
+        : 0)
     : (analysis?.summary.avg_satisfaction ?? 4.2);
   
   const departments = hasUploadedData 
@@ -214,7 +218,7 @@ export function OverviewSection() {
               <div className="min-w-0">
                 <p className="font-medium text-sm sm:text-base truncate">{risk.name}</p>
                 <p className="text-xs sm:text-sm text-muted-foreground">
-                  {((risk.value / totalEmployees) * 100).toFixed(1)}% of workforce
+                  {totalEmployees > 0 ? ((risk.value / totalEmployees) * 100).toFixed(1) : '0.0'}% of workforce
                 </p>
               </div>
             </div>

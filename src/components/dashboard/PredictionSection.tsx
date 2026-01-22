@@ -65,10 +65,18 @@ export function PredictionSection() {
   const [apiStatus, setApiStatus] = useState<'checking' | 'online' | 'offline'>('checking');
   const { toast } = useToast();
 
+  // Reset selected index when filtered employees change
+  useEffect(() => {
+    if (selectedEmployeeIndex >= employees.length) {
+      setSelectedEmployeeIndex(0);
+    }
+  }, [employees.length, selectedEmployeeIndex]);
+
   // Get current employee when in auto mode with uploaded data
   const currentEmployee = useMemo(() => {
     if (hasUploadedData && employees.length > 0 && isAutoMode) {
-      return employees[selectedEmployeeIndex];
+      const safeIndex = Math.min(selectedEmployeeIndex, employees.length - 1);
+      return employees[safeIndex];
     }
     return null;
   }, [hasUploadedData, employees, selectedEmployeeIndex, isAutoMode]);
