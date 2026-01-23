@@ -19,6 +19,31 @@ interface UploadedFile {
 
 const ITEMS_PER_PAGE = 5;
 
+// Required columns for dataset validation (case-insensitive matching)
+const REQUIRED_COLUMNS = [
+  { key: 'employee_id', aliases: ['employee id', 'employeeid', 'emp_id', 'empid', 'id'] },
+  { key: 'performance_rate', aliases: ['performance rate', 'performancerate', 'performance', 'performance_score', 'performancescore'] },
+  { key: 'salary', aliases: ['salary', 'monthly_salary', 'monthlysalary', 'pay'] },
+  { key: 'working_hours', aliases: ['number of working hours', 'working hours', 'workinghours', 'work_hours', 'workhours', 'hours', 'work_hours_per_week', 'workhoursperweek'] },
+  { key: 'working_years', aliases: ['working year in the industry', 'working years', 'workingyears', 'years', 'years_at_company', 'yearsatcompany', 'tenure', 'experience'] },
+];
+
+const validateRequiredColumns = (headers: string[]): { valid: boolean; missing: string[] } => {
+  const normalizedHeaders = headers.map(h => h.toLowerCase().trim());
+  const missing: string[] = [];
+  
+  for (const col of REQUIRED_COLUMNS) {
+    const found = col.aliases.some(alias => 
+      normalizedHeaders.some(header => header === alias || header.replace(/[\s_-]+/g, '') === alias.replace(/[\s_-]+/g, ''))
+    );
+    if (!found) {
+      missing.push(col.key.replace(/_/g, ' '));
+    }
+  }
+  
+  return { valid: missing.length === 0, missing };
+};
+
 export function DatasetUpload() {
   const [isDragging, setIsDragging] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<UploadedFile | null>(null);
@@ -137,6 +162,14 @@ export function DatasetUpload() {
 
       if (data.length === 0) {
         throw new Error('Could not parse file or file is empty');
+      }
+
+      // Validate required columns
+      const headers = Object.keys(data[0]);
+      const validation = validateRequiredColumns(headers);
+      
+      if (!validation.valid) {
+        throw new Error(`Missing required columns: ${validation.missing.join(', ')}. Please ensure your dataset contains: Employee ID, Performance Rate, Salary, Number of Working Hours, Working Year in the Industry.`);
       }
 
       clearInterval(progressInterval);
@@ -339,9 +372,15 @@ export function DatasetUpload() {
             <p className="text-sm text-muted-foreground">
               Supports CSV and JSON files up to 50MB
             </p>
-            <div className="mt-4 flex items-center justify-center gap-2 text-sm text-muted-foreground">
-              <BarChart3 className="w-4 h-4" />
-              <span>Dataset will be analyzed by ML backend</span>
+            <div className="mt-4 p-3 rounded-lg bg-muted/50 border border-border">
+              <p className="text-xs font-medium text-muted-foreground mb-2">Required columns:</p>
+              <div className="flex flex-wrap gap-2 justify-center">
+                {['Employee ID', 'Performance Rate', 'Salary', 'Working Hours', 'Working Years'].map((col) => (
+                  <span key={col} className="px-2 py-1 text-xs bg-primary/10 text-primary rounded-md">
+                    {col}
+                  </span>
+                ))}
+              </div>
             </div>
           </div>
         ) : (
