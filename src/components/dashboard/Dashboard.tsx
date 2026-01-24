@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { OverviewSection } from './OverviewSection';
@@ -20,18 +20,18 @@ import { healthCheck } from '@/services/api';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
 
-const sectionTitles: Record<string, { title: string; subtitle: string }> = {
-  overview: { title: 'Dashboard Overview', subtitle: 'Employee performance insights at a glance' },
-  upload: { title: 'Dataset Upload', subtitle: 'Upload and preprocess your employee data' },
-  prediction: { title: 'Performance Prediction', subtitle: 'ML-powered employee performance forecasting' },
-  analytics: { title: 'Productivity Analytics', subtitle: 'Deep dive into performance drivers' },
-  models: { title: 'ML Models', subtitle: 'Compare model performance and run predictions' },
-  regression: { title: 'Regression Analysis', subtitle: 'Actual vs predicted performance analysis' },
-  departments: { title: 'Department Analytics', subtitle: 'Performance breakdown by department' },
-  employees: { title: 'Employee Directory', subtitle: 'View and manage employee data' },
-  whatif: { title: 'What-If Scenarios', subtitle: 'Simulate changes and predict performance impact' },
-  productivity: { title: 'Productivity Trends', subtitle: 'Team performance and productivity over time' },
-};
+const sections = [
+  { id: 'overview', title: 'Dashboard Overview', subtitle: 'Employee performance insights at a glance' },
+  { id: 'upload', title: 'Dataset Upload', subtitle: 'Upload and preprocess your employee data' },
+  { id: 'prediction', title: 'Performance Prediction', subtitle: 'ML-powered employee performance forecasting' },
+  { id: 'whatif', title: 'What-If Scenarios', subtitle: 'Simulate changes and predict performance impact' },
+  { id: 'productivity', title: 'Productivity Trends', subtitle: 'Team performance and productivity over time' },
+  { id: 'analytics', title: 'Productivity Analytics', subtitle: 'Deep dive into performance drivers' },
+  { id: 'models', title: 'ML Models', subtitle: 'Compare model performance and run predictions' },
+  { id: 'regression', title: 'Regression Analysis', subtitle: 'Actual vs predicted performance analysis' },
+  { id: 'departments', title: 'Department Analytics', subtitle: 'Performance breakdown by department' },
+  { id: 'employees', title: 'Employee Directory', subtitle: 'View and manage employee data' },
+];
 
 export function Dashboard() {
   const navigate = useNavigate();
@@ -40,7 +40,14 @@ export function Dashboard() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [backendOnline, setBackendOnline] = useState<boolean | null>(null);
-  const currentSection = sectionTitles[activeSection];
+  const mainRef = useRef<HTMLElement>(null);
+  const sectionRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const isScrollingFromClick = useRef(false);
+
+  const currentSection = useMemo(() => 
+    sections.find(s => s.id === activeSection) || sections[0], 
+    [activeSection]
+  );
 
   const handleSignOut = async () => {
     await signOut();
@@ -55,39 +62,64 @@ export function Dashboard() {
     };
     
     checkHealth();
-    const interval = setInterval(checkHealth, 30000); // Check every 30 seconds
+    const interval = setInterval(checkHealth, 30000);
     return () => clearInterval(interval);
+  }, []);
+
+  // Handle scroll to update active section
+  useEffect(() => {
+    const main = mainRef.current;
+    if (!main) return;
+
+    const handleScroll = () => {
+      if (isScrollingFromClick.current) return;
+
+      const scrollTop = main.scrollTop;
+      const headerOffset = 120; // Account for sticky header
+      
+      let currentActive = 'overview';
+      
+      for (const [id, ref] of sectionRefs.current) {
+        if (ref) {
+          const offsetTop = ref.offsetTop - headerOffset;
+          if (scrollTop >= offsetTop - 100) {
+            currentActive = id;
+          }
+        }
+      }
+      
+      setActiveSection(currentActive);
+    };
+
+    main.addEventListener('scroll', handleScroll, { passive: true });
+    return () => main.removeEventListener('scroll', handleScroll);
   }, []);
 
   const handleSectionChange = (section: string) => {
     setActiveSection(section);
     setMobileMenuOpen(false);
+    
+    const ref = sectionRefs.current.get(section);
+    if (ref && mainRef.current) {
+      isScrollingFromClick.current = true;
+      const headerOffset = 100;
+      const offsetTop = ref.offsetTop - headerOffset;
+      
+      mainRef.current.scrollTo({
+        top: offsetTop,
+        behavior: 'smooth'
+      });
+      
+      // Reset the flag after scroll completes
+      setTimeout(() => {
+        isScrollingFromClick.current = false;
+      }, 1000);
+    }
   };
 
-  const renderSection = () => {
-    switch (activeSection) {
-      case 'overview':
-        return <OverviewSection />;
-      case 'upload':
-        return <DatasetUpload />;
-      case 'prediction':
-        return <PredictionSection />;
-      case 'analytics':
-        return <AnalyticsSection />;
-      case 'models':
-        return <ModelsSection />;
-      case 'regression':
-        return <RegressionSection />;
-      case 'departments':
-        return <DepartmentsSection />;
-      case 'employees':
-        return <EmployeesSection />;
-      case 'whatif':
-        return <WhatIfSection />;
-      case 'productivity':
-        return <ProductivitySection />;
-      default:
-        return <OverviewSection />;
+  const setSectionRef = (id: string) => (el: HTMLDivElement | null) => {
+    if (el) {
+      sectionRefs.current.set(id, el);
     }
   };
 
@@ -119,11 +151,14 @@ export function Dashboard() {
         onMobileClose={() => setMobileMenuOpen(false)}
       />
       
-      <main className={cn(
-        "flex-1 transition-all duration-500",
-        "ml-0 lg:ml-64"
-      )}>
-        {/* Header */}
+      <main 
+        ref={mainRef}
+        className={cn(
+          "flex-1 transition-all duration-500 overflow-y-auto h-screen",
+          "ml-0 lg:ml-64"
+        )}
+      >
+        {/* Sticky Header */}
         <header className="sticky top-0 z-30 backdrop-blur-xl bg-background/70 border-b border-border/50">
           <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 ml-10 lg:ml-0">
@@ -179,14 +214,86 @@ export function Dashboard() {
           </div>
         </header>
 
-        {/* Content */}
-        <div className="p-4 sm:p-6 lg:p-8 animate-fade-in" key={activeSection}>
-          {renderSection()}
+        {/* Continuous Scrolling Content */}
+        <div className="p-4 sm:p-6 lg:p-8 space-y-16">
+          {/* Overview Section */}
+          <section ref={setSectionRef('overview')} id="overview" className="scroll-mt-28">
+            <SectionHeader title="Dashboard Overview" subtitle="Employee performance insights at a glance" />
+            <OverviewSection />
+          </section>
+
+          {/* Dataset Upload Section */}
+          <section ref={setSectionRef('upload')} id="upload" className="scroll-mt-28">
+            <SectionHeader title="Dataset Upload" subtitle="Upload and preprocess your employee data" />
+            <DatasetUpload />
+          </section>
+
+          {/* Prediction Section */}
+          <section ref={setSectionRef('prediction')} id="prediction" className="scroll-mt-28">
+            <SectionHeader title="Performance Prediction" subtitle="ML-powered employee performance forecasting" />
+            <PredictionSection />
+          </section>
+
+          {/* What-If Section */}
+          <section ref={setSectionRef('whatif')} id="whatif" className="scroll-mt-28">
+            <SectionHeader title="What-If Scenarios" subtitle="Simulate changes and predict performance impact" />
+            <WhatIfSection />
+          </section>
+
+          {/* Productivity Section */}
+          <section ref={setSectionRef('productivity')} id="productivity" className="scroll-mt-28">
+            <SectionHeader title="Productivity Trends" subtitle="Team performance and productivity over time" />
+            <ProductivitySection />
+          </section>
+
+          {/* Analytics Section */}
+          <section ref={setSectionRef('analytics')} id="analytics" className="scroll-mt-28">
+            <SectionHeader title="Productivity Analytics" subtitle="Deep dive into performance drivers" />
+            <AnalyticsSection />
+          </section>
+
+          {/* Models Section */}
+          <section ref={setSectionRef('models')} id="models" className="scroll-mt-28">
+            <SectionHeader title="ML Models" subtitle="Compare model performance and run predictions" />
+            <ModelsSection />
+          </section>
+
+          {/* Regression Section */}
+          <section ref={setSectionRef('regression')} id="regression" className="scroll-mt-28">
+            <SectionHeader title="Regression Analysis" subtitle="Actual vs predicted performance analysis" />
+            <RegressionSection />
+          </section>
+
+          {/* Departments Section */}
+          <section ref={setSectionRef('departments')} id="departments" className="scroll-mt-28">
+            <SectionHeader title="Department Analytics" subtitle="Performance breakdown by department" />
+            <DepartmentsSection />
+          </section>
+
+          {/* Employees Section */}
+          <section ref={setSectionRef('employees')} id="employees" className="scroll-mt-28">
+            <SectionHeader title="Employee Directory" subtitle="View and manage employee data" />
+            <EmployeesSection />
+          </section>
+          
+          {/* Bottom padding */}
+          <div className="h-20" />
         </div>
       </main>
 
       {/* Settings Panel */}
       <SettingsPanel isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
+    </div>
+  );
+}
+
+function SectionHeader({ title, subtitle }: { title: string; subtitle: string }) {
+  return (
+    <div className="mb-6 pb-4 border-b border-border/50">
+      <h2 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+        {title}
+      </h2>
+      <p className="text-muted-foreground mt-1">{subtitle}</p>
     </div>
   );
 }
