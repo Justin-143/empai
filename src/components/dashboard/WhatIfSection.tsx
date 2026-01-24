@@ -22,7 +22,6 @@ interface ScenarioResult {
   delta: number;
   percentChange: number;
   category: 'Low' | 'Medium' | 'High';
-  riskLevel: 'low' | 'medium' | 'high';
   impactBreakdown: Array<{ factor: string; impact: number; direction: 'positive' | 'negative' | 'neutral' }>;
 }
 
@@ -152,16 +151,12 @@ export function WhatIfSection() {
       const delta = newScore - baselineScore;
       const percentChange = (delta / baselineScore) * 100;
 
-      const negativeImpacts = impactBreakdown.filter(i => i.direction === 'negative').length;
-      const riskLevel = negativeImpacts >= 3 ? 'high' : negativeImpacts >= 1 ? 'medium' : 'low';
-
       setResult({
         baselineScore,
         newScore: Math.round(newScore * 10) / 10,
         delta: Math.round(delta * 10) / 10,
         percentChange: Math.round(percentChange * 10) / 10,
         category: newScore >= 80 ? 'High' : newScore >= 60 ? 'Medium' : 'Low',
-        riskLevel,
         impactBreakdown
       });
 
@@ -480,8 +475,8 @@ export function WhatIfSection() {
                   </div>
                 </div>
 
-                {/* Category & Risk Badges */}
-                <div className="flex items-center justify-center gap-3 flex-wrap">
+                {/* Category Badge */}
+                <div className="flex items-center justify-center">
                   <Badge className={cn(
                     "text-base py-2 px-5",
                     result.category === 'High' ? "bg-green-500/20 text-green-500 hover:bg-green-500/30" :
@@ -490,15 +485,6 @@ export function WhatIfSection() {
                   )}>
                     <Target className="w-4 h-4 mr-2" />
                     {result.category} Performer
-                  </Badge>
-                  <Badge variant="outline" className={cn(
-                    "text-base py-2 px-5",
-                    result.riskLevel === 'low' ? "border-green-500 text-green-500" :
-                    result.riskLevel === 'medium' ? "border-amber-500 text-amber-500" :
-                    "border-red-500 text-red-500"
-                  )}>
-                    {result.riskLevel === 'low' ? <CheckCircle2 className="w-4 h-4 mr-2" /> : <AlertTriangle className="w-4 h-4 mr-2" />}
-                    {result.riskLevel.charAt(0).toUpperCase() + result.riskLevel.slice(1)} Risk
                   </Badge>
                 </div>
 

@@ -18,7 +18,7 @@ const displayNameSchema = z.string().min(2, 'Display name must be at least 2 cha
 
 export function AuthPage() {
   const navigate = useNavigate();
-  const { user, loading: authLoading, signIn, signUp } = useAuth();
+  const { user, loading: authLoading, signIn, signUp, sendPasswordResetEmail } = useAuth();
   
   const [activeTab, setActiveTab] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
@@ -27,6 +27,8 @@ export function AuthPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
 
   // Redirect if already logged in
   useEffect(() => {
@@ -111,6 +113,32 @@ export function AuthPage() {
   const resetForm = () => {
     setError(null);
     setSuccess(null);
+    setShowForgotPassword(false);
+    setForgotPasswordEmail('');
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const emailResult = emailSchema.safeParse(forgotPasswordEmail);
+    if (!emailResult.success) {
+      setError(emailResult.error.errors[0].message);
+      return;
+    }
+    
+    setLoading(true);
+    setError(null);
+    
+    const { error } = await sendPasswordResetEmail(forgotPasswordEmail);
+    
+    if (error) {
+      setError(error.message);
+    } else {
+      setSuccess('Password reset email sent! Check your inbox.');
+      setShowForgotPassword(false);
+      setForgotPasswordEmail('');
+    }
+    
+    setLoading(false);
   };
 
   if (authLoading) {
@@ -153,6 +181,65 @@ export function AuthPage() {
             </CardDescription>
           </CardHeader>
           
+          {showForgotPassword ? (
+            <CardContent>
+              <div className="space-y-4">
+                <div className="text-center mb-4">
+                  <h3 className="text-lg font-semibold">Reset Password</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Enter your email to receive a password reset link
+                  </p>
+                </div>
+                
+                {error && (
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>{error}</AlertDescription>
+                  </Alert>
+                )}
+                
+                <form onSubmit={handleForgotPassword} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="forgot-email">Email</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="forgot-email"
+                        type="email"
+                        placeholder="name@example.com"
+                        value={forgotPasswordEmail}
+                        onChange={(e) => setForgotPasswordEmail(e.target.value)}
+                        className="pl-10"
+                        autoComplete="email"
+                        required
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      className="flex-1"
+                      onClick={() => { setShowForgotPassword(false); setError(null); }}
+                    >
+                      Back
+                    </Button>
+                    <Button type="submit" className="flex-1" disabled={loading}>
+                      {loading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Sending...
+                        </>
+                      ) : (
+                        'Send Reset Link'
+                      )}
+                    </Button>
+                  </div>
+                </form>
+              </div>
+            </CardContent>
+          ) : (
           <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v as 'signin' | 'signup'); resetForm(); }}>
             <TabsList className="grid w-full grid-cols-2 mx-auto max-w-[280px] mb-4">
               <TabsTrigger value="signin">Sign In</TabsTrigger>
@@ -193,7 +280,16 @@ export function AuthPage() {
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="signin-password">Password</Label>
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="signin-password">Password</Label>
+                      <button
+                        type="button"
+                        onClick={() => setShowForgotPassword(true)}
+                        className="text-xs text-primary hover:underline"
+                      >
+                        Forgot password?
+                      </button>
+                    </div>
                     <div className="relative">
                       <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
@@ -291,6 +387,7 @@ export function AuthPage() {
               </TabsContent>
             </CardContent>
           </Tabs>
+          )}
           
           <CardFooter className="flex justify-center pt-0">
             <p className="text-xs text-muted-foreground text-center">
