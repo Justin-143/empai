@@ -23,7 +23,6 @@ interface PredictionResult {
     medium: number;
     high: number;
   };
-  riskLevel: 'Low' | 'Medium' | 'High';
   recommendations: string[];
 }
 
@@ -209,7 +208,6 @@ export function PredictionSection() {
         medium: category === 'Medium' ? 0.5 + Math.random() * 0.2 : 0.2 + Math.random() * 0.1,
         high: category === 'High' ? 0.65 + Math.random() * 0.2 : 0.15 + Math.random() * 0.1,
       },
-      riskLevel: category === 'Low' ? 'High' : category === 'Medium' ? 'Medium' : 'Low' as 'Low' | 'Medium' | 'High',
       recommendations
     };
   }, [age, satisfactionScore, trainingHours, yearsAtCompany, workHoursPerWeek, overtimeHours, sickDays, projectsHandled, promotions, teamSize, monthlySalary, educationLevel, remoteWorkFrequency]);
@@ -268,7 +266,6 @@ export function PredictionSection() {
           medium: response.probabilities?.medium ?? 0,
           high: response.probabilities?.high ?? 0,
         },
-        riskLevel: response.risk_level ?? 'Medium',
         recommendations: response.recommendations ?? [],
       });
 
@@ -698,16 +695,8 @@ export function PredictionSection() {
               </div>
             </div>
 
-            {/* Risk Level Badge */}
-            <div className="flex justify-center gap-3 flex-wrap">
-              <div className={cn(
-                "px-4 py-1.5 rounded-full font-medium text-sm",
-                prediction.riskLevel === 'High' ? "bg-destructive/20 text-destructive" :
-                prediction.riskLevel === 'Medium' ? "bg-warning/20 text-warning" :
-                "bg-success/20 text-success"
-              )}>
-                Risk: {prediction.riskLevel}
-              </div>
+            {/* Performance Category Badge */}
+            <div className="flex justify-center">
               <div className={cn(
                 "px-4 py-1.5 rounded-full font-medium text-sm",
                 prediction.category === 'High' ? "bg-success/20 text-success" :
