@@ -147,7 +147,8 @@ export function ProductivitySection() {
         </Select>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Charts - Vertical Stack */}
+      <div className="space-y-6">
         {/* Weekly Productivity Trend */}
         <ChartCard 
           title="Weekly Productivity Trends" 
@@ -163,9 +164,26 @@ export function ProductivitySection() {
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(222, 47%, 16%)" />
-              <XAxis dataKey="week" stroke="hsl(215, 20%, 55%)" fontSize={12} />
-              <YAxis yAxisId="left" stroke="hsl(215, 20%, 55%)" fontSize={12} />
-              <YAxis yAxisId="right" orientation="right" stroke="hsl(215, 20%, 55%)" fontSize={12} domain={[70, 100]} />
+              <XAxis 
+                dataKey="week" 
+                stroke="hsl(215, 20%, 55%)" 
+                fontSize={12}
+                label={{ value: 'Week', position: 'insideBottom', offset: -5, fill: 'hsl(215, 20%, 55%)', fontSize: 11 }}
+              />
+              <YAxis 
+                yAxisId="left" 
+                stroke="hsl(215, 20%, 55%)" 
+                fontSize={12}
+                label={{ value: 'Tasks Completed', angle: -90, position: 'insideLeft', fill: 'hsl(215, 20%, 55%)', fontSize: 11 }}
+              />
+              <YAxis 
+                yAxisId="right" 
+                orientation="right" 
+                stroke="hsl(215, 20%, 55%)" 
+                fontSize={12} 
+                domain={[70, 100]}
+                label={{ value: 'Efficiency (%)', angle: 90, position: 'insideRight', fill: 'hsl(215, 20%, 55%)', fontSize: 11 }}
+              />
               <Tooltip 
                 contentStyle={{ 
                   backgroundColor: 'hsl(222, 47%, 8%)', 
@@ -207,8 +225,18 @@ export function ProductivitySection() {
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(222, 47%, 16%)" />
-              <XAxis dataKey="hour" stroke="hsl(215, 20%, 55%)" fontSize={11} />
-              <YAxis stroke="hsl(215, 20%, 55%)" fontSize={12} domain={[0, 100]} />
+              <XAxis 
+                dataKey="hour" 
+                stroke="hsl(215, 20%, 55%)" 
+                fontSize={11}
+                label={{ value: 'Time of Day', position: 'insideBottom', offset: -5, fill: 'hsl(215, 20%, 55%)', fontSize: 11 }}
+              />
+              <YAxis 
+                stroke="hsl(215, 20%, 55%)" 
+                fontSize={12} 
+                domain={[0, 100]}
+                label={{ value: 'Score (%)', angle: -90, position: 'insideLeft', fill: 'hsl(215, 20%, 55%)', fontSize: 11 }}
+              />
               <Tooltip 
                 contentStyle={{ 
                   backgroundColor: 'hsl(222, 47%, 8%)', 
@@ -238,7 +266,8 @@ export function ProductivitySection() {
         </ChartCard>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* More Charts - Vertical Stack */}
+      <div className="space-y-6">
         {/* Team Comparison */}
         <ChartCard 
           title="Team Comparison" 
@@ -248,8 +277,20 @@ export function ProductivitySection() {
           <ResponsiveContainer width="100%" height={300}>
             <ComposedChart data={teamComparison} layout="vertical">
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(222, 47%, 16%)" />
-              <XAxis type="number" stroke="hsl(215, 20%, 55%)" fontSize={12} domain={[0, 100]} />
-              <YAxis dataKey="team" type="category" stroke="hsl(215, 20%, 55%)" fontSize={11} width={80} />
+              <XAxis 
+                type="number" 
+                stroke="hsl(215, 20%, 55%)" 
+                fontSize={12} 
+                domain={[0, 100]}
+                label={{ value: 'Score (%)', position: 'insideBottom', offset: -5, fill: 'hsl(215, 20%, 55%)', fontSize: 11 }}
+              />
+              <YAxis 
+                dataKey="team" 
+                type="category" 
+                stroke="hsl(215, 20%, 55%)" 
+                fontSize={11} 
+                width={80}
+              />
               <Tooltip 
                 contentStyle={{ 
                   backgroundColor: 'hsl(222, 47%, 8%)', 
@@ -281,7 +322,7 @@ export function ProductivitySection() {
                 stroke="hsl(215, 20%, 55%)" 
                 fontSize={12}
                 domain={[35, 60]}
-                label={{ value: 'Weekly Hours', position: 'bottom', fill: 'hsl(215, 20%, 55%)', fontSize: 11 }}
+                label={{ value: 'Weekly Hours', position: 'insideBottom', offset: -5, fill: 'hsl(215, 20%, 55%)', fontSize: 11 }}
               />
               <YAxis 
                 type="number" 
@@ -290,7 +331,7 @@ export function ProductivitySection() {
                 stroke="hsl(215, 20%, 55%)" 
                 fontSize={12}
                 domain={[50, 100]}
-                label={{ value: 'Performance', angle: -90, position: 'left', fill: 'hsl(215, 20%, 55%)', fontSize: 11 }}
+                label={{ value: 'Performance Score (%)', angle: -90, position: 'insideLeft', fill: 'hsl(215, 20%, 55%)', fontSize: 11 }}
               />
               <ZAxis type="number" dataKey="satisfaction" range={[50, 400]} />
               <Tooltip 
@@ -327,8 +368,18 @@ export function ProductivitySection() {
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(222, 47%, 16%)" />
-            <XAxis dataKey="month" stroke="hsl(215, 20%, 55%)" fontSize={12} />
-            <YAxis stroke="hsl(215, 20%, 55%)" fontSize={12} domain={[65, 90]} />
+            <XAxis 
+              dataKey="month" 
+              stroke="hsl(215, 20%, 55%)" 
+              fontSize={12}
+              label={{ value: 'Month', position: 'insideBottom', offset: -5, fill: 'hsl(215, 20%, 55%)', fontSize: 11 }}
+            />
+            <YAxis 
+              stroke="hsl(215, 20%, 55%)" 
+              fontSize={12} 
+              domain={[65, 90]}
+              label={{ value: 'Performance Score (%)', angle: -90, position: 'insideLeft', fill: 'hsl(215, 20%, 55%)', fontSize: 11 }}
+            />
             <Tooltip 
               contentStyle={{ 
                 backgroundColor: 'hsl(222, 47%, 8%)', 

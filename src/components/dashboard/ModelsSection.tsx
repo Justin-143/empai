@@ -405,7 +405,8 @@ export function ModelsSection() {
         </ChartCard>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Models Comparison - Vertical Stack */}
+      <div className="space-y-6">
         {/* Regression Models Comparison */}
         <ChartCard 
           title="Regression Models" 
@@ -421,8 +422,16 @@ export function ModelsSection() {
                 fontSize={12} 
                 domain={[0, 1]}
                 tickFormatter={(value) => `${(value * 100).toFixed(0)}%`}
+                label={{ value: 'R² Score (%)', position: 'insideBottom', offset: -5, fill: 'hsl(215, 20%, 55%)', fontSize: 11 }}
               />
-              <YAxis dataKey="name" type="category" stroke="hsl(215, 20%, 55%)" fontSize={12} width={120} />
+              <YAxis 
+                dataKey="name" 
+                type="category" 
+                stroke="hsl(215, 20%, 55%)" 
+                fontSize={12} 
+                width={120}
+                label={{ value: 'Model', angle: -90, position: 'insideLeft', fill: 'hsl(215, 20%, 55%)', fontSize: 11, dx: -10 }}
+              />
               <Tooltip 
                 contentStyle={{ 
                   backgroundColor: 'hsl(222, 47%, 8%)', 

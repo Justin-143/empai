@@ -45,7 +45,8 @@ export function DepartmentsSection() {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Charts - Vertical Stack */}
+      <div className="space-y-6">
         {/* Employee Distribution */}
         <ChartCard 
           title="Employee Distribution" 
@@ -62,6 +63,8 @@ export function DepartmentsSection() {
                 outerRadius={100}
                 paddingAngle={3}
                 dataKey="value"
+                label={({ name, value }) => `${name}: ${value}`}
+                labelLine={true}
               >
                 {pieData.map((_, index) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -80,6 +83,9 @@ export function DepartmentsSection() {
               <Legend />
             </PieChart>
           </ResponsiveContainer>
+          <div className="text-center text-xs text-muted-foreground mt-2">
+            Employee Count by Department
+          </div>
         </ChartCard>
 
         {/* Performance Radial */}
@@ -121,6 +127,9 @@ export function DepartmentsSection() {
               />
             </RadialBarChart>
           </ResponsiveContainer>
+          <div className="text-center text-xs text-muted-foreground mt-2">
+            Average Performance Score (%) by Department
+          </div>
         </ChartCard>
       </div>
 
