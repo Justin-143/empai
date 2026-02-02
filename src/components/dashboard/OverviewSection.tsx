@@ -226,14 +226,14 @@ export function OverviewSection() {
         </div>
       )}
 
-      {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+      {/* Charts - Vertical Stack */}
+      <div className="space-y-4 sm:space-y-6">
         <ChartCard 
           title="Performance Trends" 
           subtitle={hasData ? "Monthly performance from dataset" : "Actual vs Predicted performance over time"}
           delay={400}
         >
-          <ResponsiveContainer width="100%" height={250} className="min-h-[200px] sm:min-h-[250px] lg:min-h-[300px]">
+          <ResponsiveContainer width="100%" height={300} className="min-h-[250px] sm:min-h-[300px]">
             <AreaChart data={trends}>
               <defs>
                 <linearGradient id="colorActual" x1="0" y1="0" x2="0" y2="1">
@@ -246,8 +246,18 @@ export function OverviewSection() {
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-              <XAxis dataKey="month" className="fill-muted-foreground" fontSize={12} />
-              <YAxis className="fill-muted-foreground" fontSize={12} domain={[65, 90]} />
+              <XAxis 
+                dataKey="month" 
+                className="fill-muted-foreground" 
+                fontSize={12}
+                label={{ value: 'Month', position: 'insideBottom', offset: -5, className: 'fill-muted-foreground', fontSize: 11 }}
+              />
+              <YAxis 
+                className="fill-muted-foreground" 
+                fontSize={12} 
+                domain={[65, 90]}
+                label={{ value: 'Performance Score (%)', angle: -90, position: 'insideLeft', className: 'fill-muted-foreground', fontSize: 11 }}
+              />
               <Tooltip 
                 contentStyle={{ 
                   backgroundColor: 'hsl(var(--card))', 
@@ -281,11 +291,23 @@ export function OverviewSection() {
           subtitle="Average performance by department"
           delay={500}
         >
-          <ResponsiveContainer width="100%" height={250} className="min-h-[200px] sm:min-h-[250px] lg:min-h-[300px]">
+          <ResponsiveContainer width="100%" height={300} className="min-h-[250px] sm:min-h-[300px]">
             <BarChart data={deptStats} layout="vertical">
               <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-              <XAxis type="number" className="fill-muted-foreground" fontSize={10} domain={[0, 100]} />
-              <YAxis dataKey="department" type="category" className="fill-muted-foreground" fontSize={10} width={60} tickFormatter={(value) => value.length > 8 ? value.slice(0, 8) + '...' : value} />
+              <XAxis 
+                type="number" 
+                className="fill-muted-foreground" 
+                fontSize={10} 
+                domain={[0, 100]}
+                label={{ value: 'Average Performance (%)', position: 'insideBottom', offset: -5, className: 'fill-muted-foreground', fontSize: 11 }}
+              />
+              <YAxis 
+                dataKey="department" 
+                type="category" 
+                className="fill-muted-foreground" 
+                fontSize={10} 
+                width={70}
+              />
               <Tooltip 
                 contentStyle={{ 
                   backgroundColor: 'hsl(var(--card))', 
@@ -305,18 +327,27 @@ export function OverviewSection() {
         </ChartCard>
       </div>
 
-      {/* Bottom Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+      {/* Bottom Section - Vertical Stack */}
+      <div className="space-y-4 sm:space-y-6">
         <ChartCard 
           title="Performance Distribution" 
           subtitle="Employee score ranges"
           delay={600}
         >
-          <ResponsiveContainer width="100%" height={200} className="min-h-[180px] sm:min-h-[220px]">
+          <ResponsiveContainer width="100%" height={250} className="min-h-[220px] sm:min-h-[250px]">
             <BarChart data={perfDistribution}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-              <XAxis dataKey="range" className="fill-muted-foreground" fontSize={10} />
-              <YAxis className="fill-muted-foreground" fontSize={10} />
+              <XAxis 
+                dataKey="range" 
+                className="fill-muted-foreground" 
+                fontSize={10}
+                label={{ value: 'Score Range', position: 'insideBottom', offset: -5, className: 'fill-muted-foreground', fontSize: 11 }}
+              />
+              <YAxis 
+                className="fill-muted-foreground" 
+                fontSize={10}
+                label={{ value: 'Number of Employees', angle: -90, position: 'insideLeft', className: 'fill-muted-foreground', fontSize: 11 }}
+              />
               <Tooltip 
                 contentStyle={{ 
                   backgroundColor: 'hsl(var(--card))', 
@@ -333,7 +364,6 @@ export function OverviewSection() {
         <ChartCard 
           title={hasData ? "Feature Correlations" : "Top Performance Drivers"}
           subtitle={hasData ? "Correlation with performance" : "Feature importance from XGBoost"}
-          className="lg:col-span-2"
           delay={700}
         >
           <div className="space-y-3 sm:space-y-4">

@@ -57,7 +57,8 @@ export function RegressionSection() {
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Charts - Vertical Stack */}
+      <div className="space-y-6">
         {/* Actual vs Predicted */}
         <ChartCard 
           title="Actual vs Predicted" 
@@ -67,8 +68,18 @@ export function RegressionSection() {
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={regressionData}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(222, 47%, 16%)" />
-              <XAxis dataKey="index" stroke="hsl(215, 20%, 55%)" fontSize={12} />
-              <YAxis stroke="hsl(215, 20%, 55%)" fontSize={12} domain={[40, 100]} />
+              <XAxis 
+                dataKey="index" 
+                stroke="hsl(215, 20%, 55%)" 
+                fontSize={12}
+                label={{ value: 'Sample Index', position: 'insideBottom', offset: -5, fill: 'hsl(215, 20%, 55%)', fontSize: 11 }}
+              />
+              <YAxis 
+                stroke="hsl(215, 20%, 55%)" 
+                fontSize={12} 
+                domain={[40, 100]}
+                label={{ value: 'Performance Score', angle: -90, position: 'insideLeft', fill: 'hsl(215, 20%, 55%)', fontSize: 11 }}
+              />
               <Tooltip 
                 contentStyle={{ 
                   backgroundColor: 'hsl(222, 47%, 8%)', 
@@ -107,8 +118,18 @@ export function RegressionSection() {
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={residuals}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(222, 47%, 16%)" />
-              <XAxis dataKey="index" stroke="hsl(215, 20%, 55%)" fontSize={12} />
-              <YAxis stroke="hsl(215, 20%, 55%)" fontSize={12} domain={[-10, 10]} />
+              <XAxis 
+                dataKey="index" 
+                stroke="hsl(215, 20%, 55%)" 
+                fontSize={12}
+                label={{ value: 'Sample Index', position: 'insideBottom', offset: -5, fill: 'hsl(215, 20%, 55%)', fontSize: 11 }}
+              />
+              <YAxis 
+                stroke="hsl(215, 20%, 55%)" 
+                fontSize={12} 
+                domain={[-10, 10]}
+                label={{ value: 'Residual Error', angle: -90, position: 'insideLeft', fill: 'hsl(215, 20%, 55%)', fontSize: 11 }}
+              />
               <Tooltip 
                 contentStyle={{ 
                   backgroundColor: 'hsl(222, 47%, 8%)', 
@@ -145,7 +166,7 @@ export function RegressionSection() {
         delay={600}
       >
         <ResponsiveContainer width="100%" height={350}>
-          <ScatterChart margin={{ top: 20, right: 20, bottom: 40, left: 20 }}>
+          <ScatterChart margin={{ top: 20, right: 20, bottom: 50, left: 20 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(222, 47%, 16%)" />
             <XAxis 
               dataKey="satisfaction" 
@@ -154,6 +175,7 @@ export function RegressionSection() {
               name="Satisfaction"
               domain={[2, 5]}
               tickMargin={5}
+              label={{ value: 'Satisfaction Score', position: 'insideBottom', offset: -10, fill: 'hsl(215, 20%, 55%)', fontSize: 11 }}
             />
             <YAxis 
               dataKey="performance" 
@@ -162,7 +184,8 @@ export function RegressionSection() {
               name="Performance"
               domain={[30, 100]}
               tickMargin={5}
-              width={35}
+              width={45}
+              label={{ value: 'Performance Score (%)', angle: -90, position: 'insideLeft', fill: 'hsl(215, 20%, 55%)', fontSize: 11 }}
             />
             <ZAxis range={[40, 150]} />
             <Tooltip 
@@ -206,10 +229,6 @@ export function RegressionSection() {
             />
           </ScatterChart>
         </ResponsiveContainer>
-        <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 mt-4 text-xs text-muted-foreground">
-          <span>X-axis: Satisfaction Score</span>
-          <span>Y-axis: Performance Score</span>
-        </div>
       </ChartCard>
     </div>
   );

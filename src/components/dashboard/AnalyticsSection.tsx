@@ -61,7 +61,8 @@ export function AnalyticsSection() {
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Charts - Vertical Stack */}
+      <div className="space-y-6">
         {/* Feature Importance */}
         <ChartCard 
           title="Feature Importance Analysis" 
@@ -76,6 +77,7 @@ export function AnalyticsSection() {
                 stroke="hsl(215, 20%, 55%)" 
                 fontSize={12}
                 tickFormatter={(v) => `${(v * 100).toFixed(0)}%`}
+                label={{ value: 'Importance (%)', position: 'insideBottom', offset: -5, fill: 'hsl(215, 20%, 55%)', fontSize: 11 }}
               />
               <YAxis 
                 dataKey="feature" 
@@ -116,8 +118,18 @@ export function AnalyticsSection() {
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(222, 47%, 16%)" />
-              <XAxis dataKey="month" stroke="hsl(215, 20%, 55%)" fontSize={12} />
-              <YAxis stroke="hsl(215, 20%, 55%)" fontSize={12} domain={[65, 90]} />
+              <XAxis 
+                dataKey="month" 
+                stroke="hsl(215, 20%, 55%)" 
+                fontSize={12}
+                label={{ value: 'Month', position: 'insideBottom', offset: -5, fill: 'hsl(215, 20%, 55%)', fontSize: 11 }}
+              />
+              <YAxis 
+                stroke="hsl(215, 20%, 55%)" 
+                fontSize={12} 
+                domain={[65, 90]}
+                label={{ value: 'Performance Score (%)', angle: -90, position: 'insideLeft', fill: 'hsl(215, 20%, 55%)', fontSize: 11 }}
+              />
               <Tooltip 
                 contentStyle={{ 
                   backgroundColor: 'hsl(222, 47%, 8%)', 
@@ -189,12 +201,11 @@ export function AnalyticsSection() {
         </div>
       </ChartCard>
 
-      {/* Insights Panel */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Insights Panel - Vertical Stack */}
+      <div className="space-y-6">
         <ChartCard 
           title="Key Insights" 
           subtitle="AI-generated observations"
-          className="lg:col-span-2"
           delay={800}
         >
           <div className="space-y-4">
