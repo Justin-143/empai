@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { ChartCard } from './ChartCard';
 import { featureImportance, performanceTrends } from '@/data/mockData';
 import { 
@@ -8,8 +9,56 @@ import { StatCard } from './StatCard';
 import { TrendingUp, Users, Clock, Heart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AnimatedNumber } from '@/components/ui/animated-number';
+import { useDataset } from '@/contexts/DatasetContext';
+import { useFilters } from '@/contexts/FilterContext';
 
 export function AnalyticsSection() {
+  const { employees: allEmployees, hasUploadedData, featureImportance: uploadedFeatureImportance } = useDataset();
+  const { selectedDepartments } = useFilters();
+
+  // Filter employees by selected departments
+  const employees = useMemo(() => {
+    if (selectedDepartments.length === 0) return allEmployees;
+    return allEmployees.filter(e => selectedDepartments.includes(e.department));
+  }, [allEmployees, selectedDepartments]);
+
+  // Use uploaded feature importance or mock data
+  const featureData = hasUploadedData ? uploadedFeatureImportance : featureImportance;
+
+  // Compute dynamic stats from filtered employees
+  const stats = useMemo(() => {
+    if (employees.length === 0) {
+      return {
+        avgSatisfaction: 3.85,
+        highPerformers: 31,
+        mediumPerformers: 47,
+        lowPerformers: 22,
+        totalEmployees: 398,
+        trainingCompletion: 78,
+      };
+    }
+    
+    const avgSatisfaction = employees.reduce((sum, e) => sum + e.satisfactionScore, 0) / employees.length;
+    const highPerformers = employees.filter(e => e.performanceCategory === 'High').length;
+    const mediumPerformers = employees.filter(e => e.performanceCategory === 'Medium').length;
+    const lowPerformers = employees.filter(e => e.performanceCategory === 'Low').length;
+    const total = employees.length;
+    
+    return {
+      avgSatisfaction,
+      highPerformers: Math.round((highPerformers / total) * 100),
+      mediumPerformers: Math.round((mediumPerformers / total) * 100),
+      lowPerformers: Math.round((lowPerformers / total) * 100),
+      totalEmployees: total,
+      trainingCompletion: Math.round(employees.reduce((sum, e) => sum + (e.trainingHours > 30 ? 1 : 0), 0) / total * 100),
+    };
+  }, [employees]);
+
+  // Compute department count
+  const departmentCount = useMemo(() => {
+    return new Set(employees.map(e => e.department)).size;
+  }, [employees]);
+
   // Group features by category
   const categoryColors: Record<string, string> = {
     'Engagement': 'bg-primary',
@@ -53,8 +102,8 @@ export function AnalyticsSection() {
         />
         <StatCard
           title="Active Employees"
-          value="398"
-          subtitle="Across 6 departments"
+          value={stats.totalEmployees.toString()}
+          subtitle={`Across ${departmentCount} departments`}
           icon={Users}
           variant="warning"
           delay={300}
@@ -70,27 +119,28 @@ export function AnalyticsSection() {
           delay={400}
         >
           <ResponsiveContainer width="100%" height={350}>
-            <BarChart data={featureImportance} layout="vertical">
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(222, 47%, 16%)" />
+            <BarChart data={featureData} layout="vertical">
+              <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
               <XAxis 
                 type="number" 
-                stroke="hsl(215, 20%, 55%)" 
+                className="fill-muted-foreground" 
                 fontSize={12}
                 tickFormatter={(v) => `${(v * 100).toFixed(0)}%`}
-                label={{ value: 'Importance (%)', position: 'insideBottom', offset: -5, fill: 'hsl(215, 20%, 55%)', fontSize: 11 }}
+                label={{ value: 'Importance (%)', position: 'insideBottom', offset: -5, className: 'fill-muted-foreground', fontSize: 11 }}
               />
               <YAxis 
                 dataKey="feature" 
                 type="category" 
-                stroke="hsl(215, 20%, 55%)" 
+                className="fill-muted-foreground" 
                 fontSize={11} 
                 width={150}
               />
               <Tooltip 
                 contentStyle={{ 
-                  backgroundColor: 'hsl(222, 47%, 8%)', 
-                  border: '1px solid hsl(222, 47%, 16%)',
-                  borderRadius: '8px'
+                  backgroundColor: 'hsl(var(--card))', 
+                  border: '1px solid hsl(var(--border))',
+                  borderRadius: '8px',
+                  color: 'hsl(var(--foreground))'
                 }}
                 formatter={(value: number) => [`${(value * 100).toFixed(1)}%`, 'Importance']}
               />
@@ -117,24 +167,25 @@ export function AnalyticsSection() {
                   <stop offset="95%" stopColor="hsl(187, 85%, 53%)" stopOpacity={0}/>
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(222, 47%, 16%)" />
+              <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
               <XAxis 
                 dataKey="month" 
-                stroke="hsl(215, 20%, 55%)" 
+                className="fill-muted-foreground" 
                 fontSize={12}
-                label={{ value: 'Month', position: 'insideBottom', offset: -5, fill: 'hsl(215, 20%, 55%)', fontSize: 11 }}
+                label={{ value: 'Month', position: 'insideBottom', offset: -5, className: 'fill-muted-foreground', fontSize: 11 }}
               />
               <YAxis 
-                stroke="hsl(215, 20%, 55%)" 
+                className="fill-muted-foreground" 
                 fontSize={12} 
                 domain={[65, 90]}
-                label={{ value: 'Performance Score (%)', angle: -90, position: 'insideLeft', fill: 'hsl(215, 20%, 55%)', fontSize: 11 }}
+                label={{ value: 'Performance Score (%)', angle: -90, position: 'insideLeft', className: 'fill-muted-foreground', fontSize: 11 }}
               />
               <Tooltip 
                 contentStyle={{ 
-                  backgroundColor: 'hsl(222, 47%, 8%)', 
-                  border: '1px solid hsl(222, 47%, 16%)',
-                  borderRadius: '8px'
+                  backgroundColor: 'hsl(var(--card))', 
+                  border: '1px solid hsl(var(--border))',
+                  borderRadius: '8px',
+                  color: 'hsl(var(--foreground))'
                 }}
               />
               <Area 
@@ -167,7 +218,7 @@ export function AnalyticsSection() {
       >
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           {Object.entries(
-            featureImportance.reduce((acc, f) => {
+            featureData.reduce((acc, f) => {
               acc[f.category] = (acc[f.category] || 0) + f.importance;
               return acc;
             }, {} as Record<string, number>)
@@ -254,11 +305,11 @@ export function AnalyticsSection() {
         >
           <div className="space-y-6">
             {[
-              { label: 'High Performers', value: 31, suffix: '%', color: 'text-success' },
-              { label: 'Medium Performers', value: 47, suffix: '%', color: 'text-warning' },
-              { label: 'Low Performers', value: 22, suffix: '%', color: 'text-destructive' },
-              { label: 'Avg Satisfaction', value: 3.85, decimals: 2, suffix: '', color: 'text-primary' },
-              { label: 'Training Completion', value: 78, suffix: '%', color: 'text-accent' },
+              { label: 'High Performers', value: stats.highPerformers, suffix: '%', color: 'text-success' },
+              { label: 'Medium Performers', value: stats.mediumPerformers, suffix: '%', color: 'text-warning' },
+              { label: 'Low Performers', value: stats.lowPerformers, suffix: '%', color: 'text-destructive' },
+              { label: 'Avg Satisfaction', value: stats.avgSatisfaction, decimals: 2, suffix: '', color: 'text-primary' },
+              { label: 'Training Completion', value: stats.trainingCompletion, suffix: '%', color: 'text-accent' },
             ].map((stat, index) => (
               <div key={stat.label} className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">{stat.label}</span>
