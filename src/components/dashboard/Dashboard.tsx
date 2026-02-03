@@ -39,11 +39,11 @@ export function Dashboard() {
   const [activeSection, setActiveSection] = useState('overview');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [backendOnline, setBackendOnline] = useState<boolean | null>(null);
   const mainRef = useRef<HTMLElement>(null);
   const sectionRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const isScrollingFromClick = useRef(false);
-
   const currentSection = useMemo(() => 
     sections.find(s => s.id === activeSection) || sections[0], 
     [activeSection]
@@ -149,13 +149,15 @@ export function Dashboard() {
         onSettingsClick={() => setSettingsOpen(true)}
         mobileOpen={mobileMenuOpen}
         onMobileClose={() => setMobileMenuOpen(false)}
+        collapsed={sidebarCollapsed}
+        onCollapsedChange={setSidebarCollapsed}
       />
       
       <main 
         ref={mainRef}
         className={cn(
           "flex-1 transition-all duration-500 overflow-y-auto h-screen",
-          "ml-0 lg:ml-64"
+          sidebarCollapsed ? "ml-0 lg:ml-[72px]" : "ml-0 lg:ml-64"
         )}
       >
         {/* Sticky Header */}
