@@ -48,10 +48,14 @@ interface SidebarProps {
   onSettingsClick: () => void;
   mobileOpen?: boolean;
   onMobileClose?: () => void;
+  collapsed?: boolean;
+  onCollapsedChange?: (collapsed: boolean) => void;
 }
 
-export function Sidebar({ activeSection, onSectionChange, onSettingsClick, mobileOpen }: SidebarProps) {
-  const [collapsed, setCollapsed] = useState(false);
+export function Sidebar({ activeSection, onSectionChange, onSettingsClick, mobileOpen, collapsed: controlledCollapsed, onCollapsedChange }: SidebarProps) {
+  const [internalCollapsed, setInternalCollapsed] = useState(false);
+  const collapsed = controlledCollapsed ?? internalCollapsed;
+  const setCollapsed = onCollapsedChange ?? setInternalCollapsed;
   const navigate = useNavigate();
 
   const NavButton = ({ 
