@@ -1,13 +1,54 @@
+import { useMemo } from 'react';
 import { ChartCard } from './ChartCard';
-import { regressionData, satisfactionVsPerformance } from '@/data/mockData';
+import { regressionData, satisfactionVsPerformance as mockSatVsPerf } from '@/data/mockData';
 import { 
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   ScatterChart, Scatter, ZAxis, Legend
 } from 'recharts';
 import { StatCard } from './StatCard';
 import { TrendingUp, Target, AlertTriangle, CheckCircle } from 'lucide-react';
+import { useDataset } from '@/contexts/DatasetContext';
+import { useFilters } from '@/contexts/FilterContext';
+
+const DEPT_COLORS: Record<string, string> = {
+  'Engineering': 'hsl(187, 85%, 53%)',
+  'Sales': 'hsl(260, 65%, 60%)',
+  'HR': 'hsl(142, 76%, 45%)',
+  'Marketing': 'hsl(38, 92%, 50%)',
+  'Finance': 'hsl(0, 72%, 51%)',
+  'Operations': 'hsl(280, 65%, 60%)',
+};
 
 export function RegressionSection() {
+  const { employees: allEmployees, hasUploadedData } = useDataset();
+  const { selectedDepartments } = useFilters();
+
+  // Filter employees by selected departments
+  const employees = useMemo(() => {
+    if (selectedDepartments.length === 0) return allEmployees;
+    return allEmployees.filter(e => selectedDepartments.includes(e.department));
+  }, [allEmployees, selectedDepartments]);
+
+  // Generate satisfaction vs performance data from employees
+  const satisfactionVsPerformance = useMemo(() => {
+    if (!hasUploadedData || employees.length === 0) {
+      // Filter mock data by selected departments
+      if (selectedDepartments.length === 0) return mockSatVsPerf;
+      return mockSatVsPerf.filter(d => selectedDepartments.includes(d.department));
+    }
+    
+    return employees.map(e => ({
+      satisfaction: e.satisfactionScore,
+      performance: e.performanceScore,
+      department: e.department
+    }));
+  }, [employees, hasUploadedData, selectedDepartments]);
+
+  // Get unique departments from the data
+  const departments = useMemo(() => {
+    return [...new Set(satisfactionVsPerformance.map(d => d.department))];
+  }, [satisfactionVsPerformance]);
+
   // Calculate residuals
   const residuals = regressionData.map(d => ({
     index: d.index,
@@ -49,7 +90,7 @@ export function RegressionSection() {
         />
         <StatCard
           title="Predictions"
-          value="398"
+          value={employees.length > 0 ? employees.length.toString() : "398"}
           subtitle="Total samples"
           icon={CheckCircle}
           variant="success"
@@ -67,24 +108,25 @@ export function RegressionSection() {
         >
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={regressionData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(222, 47%, 16%)" />
+              <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
               <XAxis 
                 dataKey="index" 
-                stroke="hsl(215, 20%, 55%)" 
+                className="fill-muted-foreground" 
                 fontSize={12}
-                label={{ value: 'Sample Index', position: 'insideBottom', offset: -5, fill: 'hsl(215, 20%, 55%)', fontSize: 11 }}
+                label={{ value: 'Sample Index', position: 'insideBottom', offset: -5, className: 'fill-muted-foreground', fontSize: 11 }}
               />
               <YAxis 
-                stroke="hsl(215, 20%, 55%)" 
+                className="fill-muted-foreground" 
                 fontSize={12} 
                 domain={[40, 100]}
-                label={{ value: 'Performance Score', angle: -90, position: 'insideLeft', fill: 'hsl(215, 20%, 55%)', fontSize: 11 }}
+                label={{ value: 'Performance Score', angle: -90, position: 'insideLeft', className: 'fill-muted-foreground', fontSize: 11 }}
               />
               <Tooltip 
                 contentStyle={{ 
-                  backgroundColor: 'hsl(222, 47%, 8%)', 
-                  border: '1px solid hsl(222, 47%, 16%)',
-                  borderRadius: '8px'
+                  backgroundColor: 'hsl(var(--card))', 
+                  border: '1px solid hsl(var(--border))',
+                  borderRadius: '8px',
+                  color: 'hsl(var(--foreground))'
                 }}
               />
               <Line 
@@ -117,24 +159,25 @@ export function RegressionSection() {
         >
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={residuals}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(222, 47%, 16%)" />
+              <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
               <XAxis 
                 dataKey="index" 
-                stroke="hsl(215, 20%, 55%)" 
+                className="fill-muted-foreground" 
                 fontSize={12}
-                label={{ value: 'Sample Index', position: 'insideBottom', offset: -5, fill: 'hsl(215, 20%, 55%)', fontSize: 11 }}
+                label={{ value: 'Sample Index', position: 'insideBottom', offset: -5, className: 'fill-muted-foreground', fontSize: 11 }}
               />
               <YAxis 
-                stroke="hsl(215, 20%, 55%)" 
+                className="fill-muted-foreground" 
                 fontSize={12} 
                 domain={[-10, 10]}
-                label={{ value: 'Residual Error', angle: -90, position: 'insideLeft', fill: 'hsl(215, 20%, 55%)', fontSize: 11 }}
+                label={{ value: 'Residual Error', angle: -90, position: 'insideLeft', className: 'fill-muted-foreground', fontSize: 11 }}
               />
               <Tooltip 
                 contentStyle={{ 
-                  backgroundColor: 'hsl(222, 47%, 8%)', 
-                  border: '1px solid hsl(222, 47%, 16%)',
-                  borderRadius: '8px'
+                  backgroundColor: 'hsl(var(--card))', 
+                  border: '1px solid hsl(var(--border))',
+                  borderRadius: '8px',
+                  color: 'hsl(var(--foreground))'
                 }}
               />
               {/* Zero line */}
@@ -142,7 +185,7 @@ export function RegressionSection() {
                 type="monotone" 
                 data={[{ index: 1, residual: 0 }, { index: 30, residual: 0 }]}
                 dataKey="residual"
-                stroke="hsl(215, 20%, 55%)"
+                stroke="hsl(var(--muted-foreground))"
                 strokeDasharray="3 3"
                 dot={false}
               />
@@ -162,37 +205,38 @@ export function RegressionSection() {
       {/* Scatter Plot */}
       <ChartCard 
         title="Satisfaction vs Performance" 
-        subtitle="Correlation analysis by department"
+        subtitle={`Correlation analysis${selectedDepartments.length > 0 ? ` (${selectedDepartments.length} departments selected)` : ' by department'}`}
         delay={600}
       >
         <ResponsiveContainer width="100%" height={350}>
           <ScatterChart margin={{ top: 20, right: 20, bottom: 50, left: 20 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(222, 47%, 16%)" />
+            <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
             <XAxis 
               dataKey="satisfaction" 
-              stroke="hsl(215, 20%, 55%)" 
+              className="fill-muted-foreground" 
               fontSize={11}
               name="Satisfaction"
               domain={[2, 5]}
               tickMargin={5}
-              label={{ value: 'Satisfaction Score', position: 'insideBottom', offset: -10, fill: 'hsl(215, 20%, 55%)', fontSize: 11 }}
+              label={{ value: 'Satisfaction Score', position: 'insideBottom', offset: -10, className: 'fill-muted-foreground', fontSize: 11 }}
             />
             <YAxis 
               dataKey="performance" 
-              stroke="hsl(215, 20%, 55%)" 
+              className="fill-muted-foreground" 
               fontSize={11}
               name="Performance"
               domain={[30, 100]}
               tickMargin={5}
               width={45}
-              label={{ value: 'Performance Score (%)', angle: -90, position: 'insideLeft', fill: 'hsl(215, 20%, 55%)', fontSize: 11 }}
+              label={{ value: 'Performance Score (%)', angle: -90, position: 'insideLeft', className: 'fill-muted-foreground', fontSize: 11 }}
             />
             <ZAxis range={[40, 150]} />
             <Tooltip 
               contentStyle={{ 
-                backgroundColor: 'hsl(222, 47%, 8%)', 
-                border: '1px solid hsl(222, 47%, 16%)',
-                borderRadius: '8px'
+                backgroundColor: 'hsl(var(--card))', 
+                border: '1px solid hsl(var(--border))',
+                borderRadius: '8px',
+                color: 'hsl(var(--foreground))'
               }}
               formatter={(value: number, name: string) => [value.toFixed(2), name]}
             />
@@ -202,31 +246,14 @@ export function RegressionSection() {
               verticalAlign="bottom"
               align="center"
             />
-            <Scatter 
-              name="Engineering" 
-              data={satisfactionVsPerformance.filter(d => d.department === 'Engineering')} 
-              fill="hsl(187, 85%, 53%)"
-            />
-            <Scatter 
-              name="Sales" 
-              data={satisfactionVsPerformance.filter(d => d.department === 'Sales')} 
-              fill="hsl(260, 65%, 60%)"
-            />
-            <Scatter 
-              name="HR" 
-              data={satisfactionVsPerformance.filter(d => d.department === 'HR')} 
-              fill="hsl(142, 76%, 45%)"
-            />
-            <Scatter 
-              name="Marketing" 
-              data={satisfactionVsPerformance.filter(d => d.department === 'Marketing')} 
-              fill="hsl(38, 92%, 50%)"
-            />
-            <Scatter 
-              name="Finance" 
-              data={satisfactionVsPerformance.filter(d => d.department === 'Finance')} 
-              fill="hsl(0, 72%, 51%)"
-            />
+            {departments.map((dept) => (
+              <Scatter 
+                key={dept}
+                name={dept} 
+                data={satisfactionVsPerformance.filter(d => d.department === dept)} 
+                fill={DEPT_COLORS[dept] || 'hsl(var(--primary))'}
+              />
+            ))}
           </ScatterChart>
         </ResponsiveContainer>
       </ChartCard>
