@@ -255,7 +255,7 @@ export function OverviewSection() {
               <YAxis 
                 className="fill-muted-foreground" 
                 fontSize={12} 
-                domain={[65, 90]}
+                domain={[0, 100]}
                 label={{ value: 'Performance Score (%)', angle: -90, position: 'insideLeft', className: 'fill-muted-foreground', fontSize: 11 }}
               />
               <Tooltip 
