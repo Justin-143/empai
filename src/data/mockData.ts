@@ -87,11 +87,11 @@ export const featureImportance: FeatureImportance[] = [
 
 // Performance distribution data
 export const performanceDistribution = [
-  { range: '0-20', count: 5 },
-  { range: '21-40', count: 18 },
-  { range: '41-60', count: 45 },
-  { range: '61-80', count: 112 },
-  { range: '81-100', count: 78 },
+  { range: 'Very Poor', count: 5 },
+  { range: 'Poor', count: 18 },
+  { range: 'Good', count: 45 },
+  { range: 'Very Good', count: 112 },
+  { range: 'Excellent', count: 78 },
 ];
 
 // Monthly performance trends
