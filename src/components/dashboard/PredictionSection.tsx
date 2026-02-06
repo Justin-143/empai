@@ -497,11 +497,14 @@ export function PredictionSection() {
               <div className="space-y-2">
                 <Label>Monthly Salary (₹ INR)</Label>
                 <Input
-                  type="number"
-                  value={monthlySalary}
-                  onChange={(e) => setMonthlySalary(Math.max(10000, Math.min(10000000, parseInt(e.target.value) || 10000)))}
-                  min={10000}
-                  max={10000000}
+                  type="text"
+                  inputMode="numeric"
+                  value={monthlySalary.toLocaleString('en-IN')}
+                  onChange={(e) => {
+                    const rawValue = e.target.value.replace(/,/g, '');
+                    const numValue = parseInt(rawValue) || 0;
+                    setMonthlySalary(Math.max(0, Math.min(10000000, numValue)));
+                  }}
                   className="font-mono"
                   placeholder="Enter salary in INR"
                 />
