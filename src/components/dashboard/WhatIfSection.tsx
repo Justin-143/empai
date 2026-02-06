@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Cell
+  RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis
 } from 'recharts';
 import { 
   Sparkles, TrendingUp, TrendingDown, Minus, RefreshCw, Play, Target, 
@@ -302,20 +302,63 @@ export function WhatIfSection() {
     setResult(null);
   };
 
-  const impactChartData = result?.impactBreakdown.map(item => ({
-    factor: item.factor,
-    impact: item.impact,
-    fill: item.direction === 'positive' ? 'hsl(142.1 76.2% 36.3%)' : 
-          item.direction === 'negative' ? 'hsl(0 84.2% 60.2%)' : 
-          'hsl(var(--muted-foreground))'
-  })) || [];
+  // Compute absolute factor scores for visualization (not deltas)
+  const baselineFactorScores = {
+    satisfaction: computeFactorScore('satisfaction', baseline.satisfaction),
+    training: computeFactorScore('training', baseline.trainingHours),
+    workHours: computeFactorScore('workHours', baseline.workHours),
+    overtime: computeFactorScore('overtime', baseline.overtime),
+    sickDays: computeFactorScore('sickDays', baseline.sickDays),
+  };
+  
+  const adjustedFactorScores = {
+    satisfaction: computeFactorScore('satisfaction', adjustedValues.satisfaction),
+    training: computeFactorScore('training', adjustedValues.trainingHours),
+    workHours: computeFactorScore('workHours', adjustedValues.workHours),
+    overtime: computeFactorScore('overtime', adjustedValues.overtime),
+    sickDays: computeFactorScore('sickDays', adjustedValues.sickDays),
+  };
+
+  // Bar chart shows ABSOLUTE scores with baseline vs adjusted comparison
+  const comparisonChartData = [
+    { 
+      factor: 'Satisfaction', 
+      baseline: Math.round(baselineFactorScores.satisfaction), 
+      adjusted: Math.round(adjustedFactorScores.satisfaction),
+      weight: `${WEIGHTS.satisfaction * 100}%`
+    },
+    { 
+      factor: 'Training', 
+      baseline: Math.round(baselineFactorScores.training), 
+      adjusted: Math.round(adjustedFactorScores.training),
+      weight: `${WEIGHTS.training * 100}%`
+    },
+    { 
+      factor: 'Work Hours', 
+      baseline: Math.round(baselineFactorScores.workHours), 
+      adjusted: Math.round(adjustedFactorScores.workHours),
+      weight: `${WEIGHTS.workHours * 100}%`
+    },
+    { 
+      factor: 'Overtime', 
+      baseline: Math.round(baselineFactorScores.overtime), 
+      adjusted: Math.round(adjustedFactorScores.overtime),
+      weight: `${WEIGHTS.overtime * 100}%`
+    },
+    { 
+      factor: 'Sick Days', 
+      baseline: Math.round(baselineFactorScores.sickDays), 
+      adjusted: Math.round(adjustedFactorScores.sickDays),
+      weight: `${WEIGHTS.sickDays * 100}%`
+    },
+  ];
 
   const radarData = [
-    { metric: 'Satisfaction', baseline: computeFactorScore('satisfaction', baseline.satisfaction), adjusted: computeFactorScore('satisfaction', adjustedValues.satisfaction) },
-    { metric: 'Training', baseline: computeFactorScore('training', baseline.trainingHours), adjusted: computeFactorScore('training', adjustedValues.trainingHours) },
-    { metric: 'Work Hours', baseline: computeFactorScore('workHours', baseline.workHours), adjusted: computeFactorScore('workHours', adjustedValues.workHours) },
-    { metric: 'Overtime', baseline: computeFactorScore('overtime', baseline.overtime), adjusted: computeFactorScore('overtime', adjustedValues.overtime) },
-    { metric: 'Sick Days', baseline: computeFactorScore('sickDays', baseline.sickDays), adjusted: computeFactorScore('sickDays', adjustedValues.sickDays) },
+    { metric: 'Satisfaction', baseline: Math.round(baselineFactorScores.satisfaction), adjusted: Math.round(adjustedFactorScores.satisfaction) },
+    { metric: 'Training', baseline: Math.round(baselineFactorScores.training), adjusted: Math.round(adjustedFactorScores.training) },
+    { metric: 'Work Hours', baseline: Math.round(baselineFactorScores.workHours), adjusted: Math.round(adjustedFactorScores.workHours) },
+    { metric: 'Overtime', baseline: Math.round(baselineFactorScores.overtime), adjusted: Math.round(adjustedFactorScores.overtime) },
+    { metric: 'Sick Days', baseline: Math.round(baselineFactorScores.sickDays), adjusted: Math.round(adjustedFactorScores.sickDays) },
   ];
 
   // Format delta display with sign and units
@@ -639,66 +682,157 @@ export function WhatIfSection() {
                   </Badge>
                 </div>
 
-                {/* Charts Row - Stack on mobile */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-                  {/* Impact Chart */}
-                  <div className="bg-muted/20 rounded-xl p-3 sm:p-4 border border-border">
-                    <h4 className="text-xs sm:text-sm font-medium text-muted-foreground mb-3 sm:mb-4">Factor Impact (Weighted Contribution)</h4>
-                    <ResponsiveContainer width="100%" height={180}>
-                      <BarChart data={impactChartData} layout="vertical" margin={{ left: 10, right: 20 }}>
-                        <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                {/* Charts Section - Full Width Stacked */}
+                <div className="space-y-6">
+                  {/* Bar Chart: Baseline vs Adjusted Comparison */}
+                  <div className="bg-muted/20 rounded-xl p-4 sm:p-6 border border-border">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+                      <h4 className="text-sm sm:text-base font-semibold">Factor Score Comparison</h4>
+                      <div className="flex items-center gap-4 text-xs sm:text-sm">
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded-sm bg-muted-foreground/50" />
+                          <span className="text-muted-foreground">Baseline</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded-sm bg-primary" />
+                          <span className="text-muted-foreground">Projected</span>
+                        </div>
+                      </div>
+                    </div>
+                    <ResponsiveContainer width="100%" height={280}>
+                      <BarChart 
+                        data={comparisonChartData} 
+                        layout="vertical" 
+                        margin={{ left: 20, right: 40, top: 10, bottom: 20 }}
+                        barGap={4}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" horizontal={true} vertical={false} />
                         <XAxis 
                           type="number" 
+                          domain={[0, 100]}
+                          tickFormatter={(value) => `${value}`}
                           className="fill-muted-foreground" 
-                          fontSize={10}
-                          label={{ value: 'Impact Score', position: 'insideBottom', offset: -5, fontSize: 10 }}
+                          fontSize={11}
+                          axisLine={{ stroke: 'hsl(var(--border))' }}
+                          tickLine={{ stroke: 'hsl(var(--border))' }}
                         />
                         <YAxis 
                           dataKey="factor" 
                           type="category" 
                           className="fill-muted-foreground" 
-                          fontSize={10} 
-                          width={70}
-                          label={{ value: 'Factor', angle: -90, position: 'insideLeft', fontSize: 10, offset: 10 }}
+                          fontSize={12} 
+                          width={85}
+                          axisLine={false}
+                          tickLine={false}
                         />
                         <Tooltip 
                           contentStyle={{ 
                             backgroundColor: 'hsl(var(--card))', 
                             border: '1px solid hsl(var(--border))',
                             borderRadius: '8px',
-                            color: 'hsl(var(--foreground))'
+                            color: 'hsl(var(--foreground))',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
                           }}
-                          formatter={(value: number) => [`${value > 0 ? '+' : ''}${value} pts`, 'Impact']}
+                          formatter={(value: number, name: string) => [
+                            `${value}/100`, 
+                            name === 'baseline' ? 'Baseline Score' : 'Projected Score'
+                          ]}
+                          labelFormatter={(label) => `${label}`}
                         />
-                        <Bar dataKey="impact" radius={[0, 4, 4, 0]}>
-                          {impactChartData.map((entry, index) => (
-                            <Cell key={index} fill={entry.fill} />
-                          ))}
-                        </Bar>
+                        <Bar 
+                          dataKey="baseline" 
+                          fill="hsl(var(--muted-foreground))" 
+                          fillOpacity={0.4}
+                          radius={[0, 4, 4, 0]} 
+                          barSize={14}
+                          name="baseline"
+                        />
+                        <Bar 
+                          dataKey="adjusted" 
+                          fill="hsl(var(--primary))" 
+                          radius={[0, 4, 4, 0]} 
+                          barSize={14}
+                          name="adjusted"
+                        />
                       </BarChart>
                     </ResponsiveContainer>
+                    <p className="text-xs text-muted-foreground text-center mt-2">
+                      Factor Score (0-100 Scale) — Higher is better
+                    </p>
                   </div>
 
-                  {/* Radar Comparison */}
-                  <div className="bg-muted/20 rounded-xl p-3 sm:p-4 border border-border">
-                    <h4 className="text-xs sm:text-sm font-medium text-muted-foreground mb-3 sm:mb-4">Factor Scores (0-100 Scale)</h4>
-                    <ResponsiveContainer width="100%" height={180}>
-                      <RadarChart data={radarData}>
-                        <PolarGrid className="stroke-border" />
-                        <PolarAngleAxis dataKey="metric" className="fill-muted-foreground" fontSize={9} />
-                        <PolarRadiusAxis className="fill-muted-foreground" fontSize={8} domain={[0, 100]} />
-                        <Radar name="Before" dataKey="baseline" stroke="hsl(var(--muted-foreground))" fill="hsl(var(--muted-foreground))" fillOpacity={0.2} strokeWidth={2} />
-                        <Radar name="After" dataKey="adjusted" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.3} strokeWidth={2} />
+                  {/* Radar Chart: Visual Comparison */}
+                  <div className="bg-muted/20 rounded-xl p-4 sm:p-6 border border-border">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+                      <h4 className="text-sm sm:text-base font-semibold">Performance Profile</h4>
+                      <div className="flex items-center gap-4 text-xs sm:text-sm">
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded-full border-2 border-muted-foreground bg-muted-foreground/20" />
+                          <span className="text-muted-foreground">Before</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded-full border-2 border-primary bg-primary/30" />
+                          <span className="text-muted-foreground">After</span>
+                        </div>
+                      </div>
+                    </div>
+                    <ResponsiveContainer width="100%" height={320}>
+                      <RadarChart data={radarData} margin={{ top: 20, right: 40, bottom: 20, left: 40 }}>
+                        <PolarGrid 
+                          className="stroke-border" 
+                          strokeDasharray="3 3"
+                          gridType="polygon"
+                        />
+                        <PolarAngleAxis 
+                          dataKey="metric" 
+                          className="fill-foreground" 
+                          fontSize={12}
+                          fontWeight={500}
+                          tick={{ fill: 'hsl(var(--foreground))' }}
+                        />
+                        <PolarRadiusAxis 
+                          className="fill-muted-foreground" 
+                          fontSize={10} 
+                          domain={[0, 100]} 
+                          tickCount={6}
+                          axisLine={false}
+                          tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                        />
+                        <Radar 
+                          name="Before" 
+                          dataKey="baseline" 
+                          stroke="hsl(var(--muted-foreground))" 
+                          fill="hsl(var(--muted-foreground))" 
+                          fillOpacity={0.15} 
+                          strokeWidth={2}
+                          strokeDasharray="4 4"
+                        />
+                        <Radar 
+                          name="After" 
+                          dataKey="adjusted" 
+                          stroke="hsl(var(--primary))" 
+                          fill="hsl(var(--primary))" 
+                          fillOpacity={0.25} 
+                          strokeWidth={2.5}
+                        />
                         <Tooltip 
                           contentStyle={{ 
                             backgroundColor: 'hsl(var(--card))', 
                             border: '1px solid hsl(var(--border))',
                             borderRadius: '8px',
-                            color: 'hsl(var(--foreground))'
+                            color: 'hsl(var(--foreground))',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
                           }}
+                          formatter={(value: number, name: string) => [
+                            `${value}/100`, 
+                            name === 'Before' ? 'Baseline' : 'Projected'
+                          ]}
                         />
                       </RadarChart>
                     </ResponsiveContainer>
+                    <p className="text-xs text-muted-foreground text-center mt-2">
+                      All factors normalized to 0-100 scale for comparison
+                    </p>
                   </div>
                 </div>
               </div>
