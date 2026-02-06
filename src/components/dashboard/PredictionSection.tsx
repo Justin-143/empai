@@ -46,7 +46,7 @@ export function PredictionSection() {
   const [department, setDepartment] = useState('Engineering');
   const [educationLevel, setEducationLevel] = useState("Bachelor's");
   const [yearsAtCompany, setYearsAtCompany] = useState([5]);
-  const [monthlySalary, setMonthlySalary] = useState(5000);
+  const [monthlySalary, setMonthlySalary] = useState(50000);
   const [workHoursPerWeek, setWorkHoursPerWeek] = useState([40]);
   const [projectsHandled, setProjectsHandled] = useState([5]);
   const [overtimeHours, setOvertimeHours] = useState([5]);
@@ -89,7 +89,7 @@ export function PredictionSection() {
       setDepartment(currentEmployee.department || 'Engineering');
       setEducationLevel("Bachelor's"); // Default - not in Employee interface
       setYearsAtCompany([currentEmployee.yearsAtCompany || 5]);
-      setMonthlySalary(5000); // Default - not in Employee interface
+      setMonthlySalary(50000); // Default - not in Employee interface (INR)
       setWorkHoursPerWeek([currentEmployee.workHoursPerWeek || 40]);
       setProjectsHandled([5]); // Default - not in Employee interface
       setOvertimeHours([currentEmployee.overtimeHours || 5]);
@@ -136,7 +136,7 @@ export function PredictionSection() {
     setDepartment('Engineering');
     setEducationLevel("Bachelor's");
     setYearsAtCompany([5]);
-    setMonthlySalary(5000);
+    setMonthlySalary(50000);
     setWorkHoursPerWeek([40]);
     setProjectsHandled([5]);
     setOvertimeHours([5]);
@@ -163,7 +163,7 @@ export function PredictionSection() {
       projects: 1.2,
       promotions: 3.5,
       teamSize: 0.2,
-      salary: 0.001,
+      salary: 0.00001, // Adjusted for INR (e.g., 50000 INR)
       education: { 'High School': -5, "Associate's": 0, "Bachelor's": 5, "Master's": 10, 'PhD': 15 },
       remote: { 'Never': -2, 'Rarely': 0, 'Hybrid': 3, 'Mostly': 2, 'Always': 1 }
     };
@@ -423,6 +423,16 @@ export function PredictionSection() {
                     <SelectItem value="Marketing">Marketing</SelectItem>
                     <SelectItem value="Finance">Finance</SelectItem>
                     <SelectItem value="Operations">Operations</SelectItem>
+                    <SelectItem value="IT">IT</SelectItem>
+                    <SelectItem value="Customer Support">Customer Support</SelectItem>
+                    <SelectItem value="Research & Development">Research & Development</SelectItem>
+                    <SelectItem value="Legal">Legal</SelectItem>
+                    <SelectItem value="Administration">Administration</SelectItem>
+                    <SelectItem value="Quality Assurance">Quality Assurance</SelectItem>
+                    <SelectItem value="Product Management">Product Management</SelectItem>
+                    <SelectItem value="Design">Design</SelectItem>
+                    <SelectItem value="Logistics">Logistics</SelectItem>
+                    <SelectItem value="Procurement">Procurement</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -453,24 +463,47 @@ export function PredictionSection() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Software Engineer">Software Engineer</SelectItem>
+                    <SelectItem value="Senior Software Engineer">Senior Software Engineer</SelectItem>
                     <SelectItem value="Data Analyst">Data Analyst</SelectItem>
+                    <SelectItem value="Data Scientist">Data Scientist</SelectItem>
                     <SelectItem value="Manager">Manager</SelectItem>
+                    <SelectItem value="Senior Manager">Senior Manager</SelectItem>
+                    <SelectItem value="Director">Director</SelectItem>
+                    <SelectItem value="VP">VP</SelectItem>
                     <SelectItem value="Sales Rep">Sales Rep</SelectItem>
+                    <SelectItem value="Sales Manager">Sales Manager</SelectItem>
                     <SelectItem value="HR Specialist">HR Specialist</SelectItem>
+                    <SelectItem value="HR Manager">HR Manager</SelectItem>
                     <SelectItem value="Designer">Designer</SelectItem>
+                    <SelectItem value="UX Designer">UX Designer</SelectItem>
+                    <SelectItem value="Product Designer">Product Designer</SelectItem>
                     <SelectItem value="Accountant">Accountant</SelectItem>
+                    <SelectItem value="Financial Analyst">Financial Analyst</SelectItem>
+                    <SelectItem value="Project Manager">Project Manager</SelectItem>
+                    <SelectItem value="Product Manager">Product Manager</SelectItem>
+                    <SelectItem value="Business Analyst">Business Analyst</SelectItem>
+                    <SelectItem value="QA Engineer">QA Engineer</SelectItem>
+                    <SelectItem value="DevOps Engineer">DevOps Engineer</SelectItem>
+                    <SelectItem value="Marketing Specialist">Marketing Specialist</SelectItem>
+                    <SelectItem value="Content Writer">Content Writer</SelectItem>
+                    <SelectItem value="Customer Support">Customer Support</SelectItem>
+                    <SelectItem value="Technical Lead">Technical Lead</SelectItem>
+                    <SelectItem value="Consultant">Consultant</SelectItem>
+                    <SelectItem value="Intern">Intern</SelectItem>
+                    <SelectItem value="Executive">Executive</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Monthly Salary ($)</Label>
+                <Label>Monthly Salary (₹ INR)</Label>
                 <Input
                   type="number"
                   value={monthlySalary}
-                  onChange={(e) => setMonthlySalary(Math.max(1000, Math.min(50000, parseInt(e.target.value) || 1000)))}
-                  min={1000}
-                  max={50000}
+                  onChange={(e) => setMonthlySalary(Math.max(10000, Math.min(10000000, parseInt(e.target.value) || 10000)))}
+                  min={10000}
+                  max={10000000}
                   className="font-mono"
+                  placeholder="Enter salary in INR"
                 />
               </div>
             </div>
