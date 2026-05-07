@@ -207,22 +207,7 @@ export function LandingPage() {
           ))}
         </div>
 
-        {/* Scroll Indicator */}
-        <div 
-          className={cn(
-            "absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-muted-foreground/50 transition-all duration-700 delay-1000",
-            mounted ? "opacity-100" : "opacity-0"
-          )}
-        >
-          <span className="text-xs uppercase tracking-widest">Explore</span>
-          <ChevronDown className="w-5 h-5 animate-bounce-subtle" />
-        </div>
       </div>
-
-      {/* Footer */}
-      <footer className="absolute bottom-4 left-0 right-0 text-center text-xs sm:text-sm text-muted-foreground/40 px-4">
-        Built with precision for modern HR analytics • Powered by Machine Learning
-      </footer>
     </div>
   );
 }
